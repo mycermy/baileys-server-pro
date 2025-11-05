@@ -20,25 +20,42 @@
 
 ### Step 2: Fix Permissions on VPS
 
-SSH into your VPS and run:
+**First, check if volumes were created:**
 
 ```bash
-# Quick one-liner fix
-docker volume inspect baileys_sessions 2>/dev/null | grep Mountpoint | awk '{print $2}' | tr -d ',"' | xargs sudo chown -R 1000:1000 && \
-docker volume inspect baileys_uploads 2>/dev/null | grep Mountpoint | awk '{print $2}' | tr -d ',"' | xargs sudo chown -R 1000:1000 && \
+# SSH into your VPS
+ssh user@zulfadli.com
+
+# Check for volumes
+docker volume ls | grep baileys
+```
+
+**If you see the volumes, run this command:**
+
+```bash
+# Run as root or with sudo
+docker volume inspect baileys_sessions --format '{{ .Mountpoint }}' | xargs chown -R 1000:1000 && \
+docker volume inspect baileys_uploads --format '{{ .Mountpoint }}' | xargs chown -R 1000:1000 && \
 echo "✅ Permissions fixed!"
 ```
 
-**Or use the provided script:**
+**Or use the provided script (recommended):**
 
 ```bash
-# Clone the repo on your VPS
-git clone https://github.com/mycermy/baileys-server-pro.git
+# Option 1: If you cloned the repo on VPS
 cd baileys-server-pro
+./fix-portainer-volumes.sh
 
-# Run the fix script
+# Option 2: Download and run directly
+curl -o fix-portainer-volumes.sh https://raw.githubusercontent.com/mycermy/baileys-server-pro/local-dev/fix-portainer-volumes.sh
+chmod +x fix-portainer-volumes.sh
 ./fix-portainer-volumes.sh
 ```
+
+**If volumes don't exist yet:**
+1. The stack deployment might have failed
+2. Check Portainer logs for build errors
+3. Make sure you're using the Repository method (not Web editor)
 
 ---
 
