@@ -11,6 +11,37 @@ A production-ready multi-session WhatsApp server using `@whiskeysockets/baileys`
 -   **Security:** Endpoints protected by API Key.
 -   **Dockerized:** Easy to deploy and scale.
 
+## ⚙️ Environment Configuration
+
+Configure your deployment using the `.env` file in the root directory:
+
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit with your settings
+nano .env
+```
+
+### Environment Variables:
+- **`PORT`** - Server port (default: 3000)
+- **`NODE_ENV`** - Environment mode (default: production)
+
+### Docker Environment Loading:
+
+**Local Development** (`docker-compose.yml`):
+```yaml
+env_file:
+  - .env  # Automatically loads all variables from .env file
+```
+
+**Portainer Deployment** (`portainer-stack.yml`):
+```yaml
+environment:
+  - NODE_ENV=${NODE_ENV:-production}  # With fallback defaults
+  - PORT=${PORT:-3000}
+```
+
 ## 🏁 Quick Start with Docker Compose
 
 The easiest way to start the server is using `docker-compose`.
@@ -40,9 +71,9 @@ To deploy this server to your Portainer instance at `portainer.test/`:
 1. **In Portainer** (`portainer.test/`):
    - Go to **Stacks** → **Add Stack**
    - **Name:** `baileys-server-pro`
-   - **Repository URL:** `https://github.com/dev-juanda01/baileys-server-pro`
+   - **Repository URL:** `https://github.com/mycermy/baileys-server-pro`
    - **Compose path:** `portainer-stack.yml`
-   - **Environment variables:**
+   - **Environment variables:** (Set these in Portainer UI)
      - `NODE_ENV=production`
      - `PORT=3000`
 
@@ -58,23 +89,58 @@ docker build -t baileys-server-pro:latest .
 docker-compose up -d
 ```
 
-## 🐳 Manual Docker Commands
+## 🚀 Deployment Scripts
 
-If you prefer manual Docker commands:
+### `deploy.sh` - Full Redeployment
+**Usage:** `./deploy.sh [registry] [tag] [branch]`
 
+**Parameters:**
+- `registry`: Docker registry URL (default: `localhost:5000`)
+- `tag`: Image tag (default: `latest`)
+- `branch`: Git branch to deploy from (default: `local-dev`)
+
+**Examples:**
 ```bash
-# Build the image
-docker build -t baileys-server-pro .
-
-# Run the container
-docker run -d \
-  --name baileys-server-pro \
-  -p 3000:3000 \
-  -v $(pwd)/sessions:/usr/src/app/sessions \
-  -v $(pwd)/uploads:/usr/src/app/uploads \
-  -e NODE_ENV=production \
-  baileys-server-pro
+./deploy.sh                          # localhost:5000, latest, local-dev
+./deploy.sh myregistry.com v1.0.0 main
+./deploy.sh "" "" production         # production branch
 ```
+
+### `update.sh` - Quick UI Updates
+**Usage:** `./update.sh`
+
+Updates HTML/CSS/JS files without rebuilding the Docker image.
+
+## 🔄 Updating & Redeploying
+
+### For Code Changes (rebuild required):
+```bash
+# Deploy from local-dev branch (default)
+./deploy.sh
+
+# Deploy from specific branch
+./deploy.sh localhost:5000 latest main
+
+# Deploy from production branch
+./deploy.sh myregistry.com v1.0.0 production
+```
+
+### For HTML/CSS/JS Changes (quick update):
+```bash
+# Quick update without rebuilding
+./update.sh
+```
+
+### For Portainer:
+1. **Push changes** to your GitHub repository
+2. **In Portainer** → Stacks → select your stack
+3. **Click "Pull and redeploy"** to get latest changes
+
+## 📁 File Structure & Volumes
+
+- **`./sessions`** → `/usr/src/app/sessions` (persistent WhatsApp sessions)
+- **`./uploads`** → `/usr/src/app/uploads` (uploaded files)
+- **`./public`** → `/usr/src/app/public` (web interface - bind mounted for live updates)
 
 ## 📚 API Documentation
 
