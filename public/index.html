@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Cliente Baileys-Server</title>
+        <title>Test Client for Baileys Server</title>
         <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
         <style>
             body {
@@ -103,96 +103,96 @@
     </head>
     <body>
         <div class="container">
-            <h1>Cliente de Prueba para Baileys Server 🚀</h1>
+            <h1>Test Client for Baileys Server 🚀</h1>
 
             <div class="card">
-                <h2>1. Gestión de Sesión</h2>
+                <h2>1. Session Management</h2>
                 <div class="form-group">
-                    <label for="session-id">ID de la Sesión</label>
+                    <label for="session-id">Session ID</label>
                     <input
                         type="text"
                         id="session-id"
-                        placeholder="Ej: tienda-1"
-                        value="mi-sesion"
+                        placeholder="Ex: store-1"
+                        value="my-session"
                     />
                 </div>
                 <div class="form-group">
-                    <label for="webhook-url">URL del Webhook (Opcional)</label>
+                    <label for="webhook-url">Webhook URL (Optional)</label>
                     <input
                         type="text"
                         id="webhook-url"
-                        placeholder="https://tu-endpoint.com/webhook"
+                        placeholder="https://your-endpoint.com/webhook"
                     />
                 </div>
-                <button id="start-session">Iniciar Sesión</button>
-                <button id="stop-session" disabled>Detener Sesión</button>
+                <button id="start-session">Start Session</button>
+                <button id="stop-session" disabled>Stop Session</button>
             </div>
 
             <div class="card">
-                <h2>2. Código QR</h2>
+                <h2>2. QR Code</h2>
                 <div id="qr-card-content">
                     <div id="qr-code">
                         <p>
-                            El código QR aparecerá aquí después de iniciar la
-                            sesión.
+                            The QR code will appear here after starting the
+                            session.
                         </p>
                     </div>
-                    <button id="refresh-qr">Refrescar QR</button>
+                    <button id="refresh-qr">Refresh QR</button>
                 </div>
             </div>
 
             <div class="card">
-                <h2>3. Recibir Mensajes (Webhooks)</h2>
+                <h2>3. Receive Messages (Webhooks)</h2>
                 <div class="info-box">
-                    <p>Para probar la recepción de mensajes:</p>
+                    <p>To test message reception:</p>
                     <ol>
                         <li>
-                            Ve a
+                            Go to
                             <a href="https://webhook.site/" target="_blank"
                                 >webhook.site</a
                             >
-                            y copia la URL única.
+                            and copy the unique URL.
                         </li>
-                        <li>Pega esa URL en el campo "URL del Webhook".</li>
-                        <li>Inicia la sesión y escanea el QR.</li>
+                        <li>Paste that URL in the "Webhook URL" field.</li>
+                        <li>Start the session and scan the QR code.</li>
                         <li>
-                            Envía un mensaje desde otro teléfono al número
-                            conectado.
+                            Send a message from another phone to the connected
+                            number.
                         </li>
                         <li>
-                            El mensaje aparecerá en la página de webhook.site.
+                            The message will appear on the webhook.site page.
                         </li>
                     </ol>
                 </div>
             </div>
 
             <div id="send-message-card" class="card" style="display: none">
-                <h2>4. Enviar Mensaje</h2>
+                <h2>4. Send Message</h2>
                 <div class="form-group">
                     <label for="phone-number"
-                        >Número de Teléfono (con código de país)</label
+                        >Phone Number (with country code)</label
                     >
                     <input
                         type="text"
                         id="phone-number"
-                        placeholder="Ej: 573001234567"
+                        placeholder="Ex: 573001234567"
                     />
                 </div>
                 <div class="form-group">
-                    <label for="message">Mensaje</label>
+                    <label for="message">Message</label>
                     <input
                         type="text"
                         id="message"
-                        placeholder="Escribe tu mensaje aquí..."
+                        placeholder="Type your message here..."
                     />
                 </div>
-                <button id="send-message">Enviar Mensaje</button>
+                <button id="send-message">Send Message</button>
             </div>
 
             <div class="card">
-                <h2>Log de Respuestas de la API</h2>
+                <h2>API Response Log</h2>
                 <pre id="api-response">
-Aquí aparecerán las respuestas del servidor...</pre
+Server responses will appear here...</pre
                 >
             </div>
         </div>
@@ -237,12 +237,12 @@ Aquí aparecerán las respuestas del servidor...</pre
                 const sessionId = sessionIdInput.value;
                 const webhook = webhookUrlInput.value;
                 if (!sessionId) {
-                    alert("Por favor, introduce un ID de sesión.");
+                    alert("Please enter a session ID.");
                     return;
                 }
 
                 qrCodeContainer.innerHTML =
-                    "<p>Iniciando sesión, por favor espera...</p>";
+                    "<p>Starting session, please wait...</p>";
                 updateUI(true);
 
                 try {
@@ -265,7 +265,7 @@ Aquí aparecerán las respuestas del servidor...</pre
                     }
                 } catch (error) {
                     qrCodeContainer.innerHTML =
-                        '<p style="color: red;">Error de conexión con el servidor.</p>';
+                        '<p style="color: red;">Connection error with the server.</p>';
                     logResponse({ error: error.message });
                     updateUI(false);
                 }
@@ -275,7 +275,7 @@ Aquí aparecerán las respuestas del servidor...</pre
             async function refreshQr() {
                 const sessionId = sessionIdInput.value;
                 qrCodeContainer.innerHTML =
-                    "<p>Refrescando QR, por favor espera...</p>"; // Mensaje de carga
+                    "<p>Refreshing QR, please wait...</p>"; // Loading message
 
                 try {
                     const response = await fetch(
@@ -305,7 +305,7 @@ Aquí aparecerán las respuestas del servidor...</pre
                         // -> FIN DE LA CORRECCIÓN
                     } else {
                         qrCodeContainer.innerHTML =
-                            "<p>No hay código QR disponible.</p>";
+                            "<p>No QR code available.</p>";
                         qrCodeInstance = null;
                         if (data.message) {
                             alert(data.message);
@@ -321,7 +321,7 @@ Aquí aparecerán las respuestas del servidor...</pre
                 } catch (error) {
                     console.error("Error al refrescar QR:", error);
                     qrCodeContainer.innerHTML =
-                        '<p style="color: red;">Error de conexión al refrescar el QR.</p>';
+                        '<p style="color: red;">Connection error when refreshing QR.</p>';
                 }
             }
 
@@ -334,7 +334,7 @@ Aquí aparecerán las respuestas del servidor...</pre
                 const message = messageInput.value;
 
                 if (!number || !message) {
-                    alert("El número y el mensaje son requeridos.");
+                    alert("Number and message are required.");
                     return;
                 }
 
@@ -351,7 +351,7 @@ Aquí aparecerán las respuestas del servidor...</pre
                     logResponse(data);
                     alert(
                         data.success
-                            ? "Mensaje enviado!"
+                            ? "Message sent!"
                             : `Error: ${data.message}`
                     );
                     if (data.success) {
@@ -359,7 +359,7 @@ Aquí aparecerán las respuestas del servidor...</pre
                     }
                 } catch (error) {
                     logResponse({ error: error.message });
-                    alert("Error de conexión al enviar el mensaje.");
+                    alert("Connection error when sending the message.");
                 }
             });
 
@@ -368,7 +368,7 @@ Aquí aparecerán las respuestas del servidor...</pre
                 const sessionId = sessionIdInput.value;
                 if (
                     !confirm(
-                        `¿Seguro que quieres detener la sesión "${sessionId}"?`
+                        `Are you sure you want to stop the session "${sessionId}"?`
                     )
                 )
                     return;
@@ -384,12 +384,12 @@ Aquí aparecerán las respuestas del servidor...</pre
                     logResponse(data);
 
                     qrCodeContainer.innerHTML =
-                        "<p>La sesión ha sido detenida.</p>";
+                        "<p>The session has been stopped.</p>";
                     qrCodeInstance = null;
                     updateUI(false);
                 } catch (error) {
                     logResponse({ error: error.message });
-                    alert("Error de conexión al detener la sesión.");
+                    alert("Connection error when stopping the session.");
                 }
             });
         </script>
