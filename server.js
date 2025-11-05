@@ -43,11 +43,12 @@ app.get('/api/config', (req, res) => {
     });
 });
 
-// Bind to 127.0.0.1 (localhost only) for security
-// Only accessible from within the VPS/Docker network
-app.listen(PORT, '127.0.0.1', () => {
+// Listen on 0.0.0.0 inside container (required for Docker port mapping)
+// Security is controlled by docker-compose.yml port binding:
+// - "127.0.0.1:3000:3000" = localhost only (secure)
+// - "3000:3000" = accessible from anywhere (insecure)
+app.listen(PORT, '0.0.0.0', () => {
     logger.info(banner);
-    logger.info(`✅ Server listening on http://127.0.0.1:${PORT} (localhost only)`);
-    logger.info(`📕 Documentation available at http://127.0.0.1:${PORT}/api-docs`);
-    logger.info(`🔒 Security: Only accessible from localhost/Docker network`);
+    logger.info(`✅ Server listening on http://0.0.0.0:${PORT}`);
+    logger.info(`📕 Documentation available at http://0.0.0.0:${PORT}/api-docs`);
 });
