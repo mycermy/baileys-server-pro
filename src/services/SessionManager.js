@@ -19,13 +19,13 @@ class SessionManager {
         if (this.sessions.has(sessionId)) {
             const existingSession = this.sessions.get(sessionId);
             logger.warn(
-                `La sesión ${sessionId} ya existe con estado: ${existingSession.status}`
+                `The session ${sessionId} already exists with status: ${existingSession.status}`
             );
 
             // Si la sesión está en estado fallido, la reinicia.
             if (existingSession.status === "max_retries_reached") {
                 logger.info(
-                    `[${sessionId}] La sesión está en estado fallido. Reiniciando desde 'start'`
+                    `[${sessionId}] The session is in failed state. Restarting from 'start'`
                 );
                 existingSession.retryCount = 0;
                 existingSession.status = "starting";
@@ -36,7 +36,7 @@ class SessionManager {
             return existingSession;
         }
 
-        logger.info(`Iniciando nueva sesión: ${sessionId}`);
+        logger.info(`Starting new session: ${sessionId}`);
 
         const sessionDir = path.join(SESSIONS_DIR, sessionId);
         if (!fs.existsSync(sessionDir)) {
@@ -58,9 +58,9 @@ class SessionManager {
     }
 
     restoreSessions() {
-        logger.info("Restaurando sesiones persistentes...");
+        logger.info("Restoring persistent sessions...");
         if (!fs.existsSync(SESSIONS_DIR)) {
-            logger.warn("No hay directorio de sesiones para restaurar.");
+            logger.warn("No sessions directory to restore.");
             return;
         }
         const sessionFolders = fs.readdirSync(SESSIONS_DIR);
@@ -76,15 +76,15 @@ class SessionManager {
                         fs.readFileSync(metadataPath, "utf-8")
                     );
                     logger.info(
-                        `✅ Restaurando sesión: ${
+                        `✅ Restoring session: ${
                             metadata.sessionId
-                        } con webhook: ${metadata.webhookUrl || "ninguno"}`
+                        } with webhook: ${metadata.webhookUrl || "none"}`
                     );
                     this.startSession(metadata.sessionId, metadata.webhookUrl);
                 } catch (error) {
                     logger.error(
                         { error },
-                        `Error al restaurar la sesión desde ${sessionId}`
+                        `Error restoring session from ${sessionId}`
                     );
                 }
             }
@@ -98,7 +98,7 @@ class SessionManager {
     async endSession(sessionId) {
         const session = this.sessions.get(sessionId);
         if (session) {
-            logger.info(`Cerrando sesión: ${sessionId}`);
+            logger.info(`Closing session: ${sessionId}`);
             await session.logout();
             return true;
         }

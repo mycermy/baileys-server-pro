@@ -1,27 +1,27 @@
 # Baileys Server Pro 🚀
 
-Un servidor de WhatsApp multi-sesión, listo para producción, que utiliza `@whiskeysockets/baileys`. Proporciona una API REST segura para enviar y recibir mensajes, permitiendo una fácil integración con otras plataformas.
+A production-ready multi-session WhatsApp server using `@whiskeysockets/baileys`. It provides a secure REST API for sending and receiving messages, allowing easy integration with other platforms.
 
-## ✨ Características
+## ✨ Features
 
--   **Multi-Sesión:** Gestiona múltiples números de WhatsApp de forma simultánea.
--   **Persistencia:** Las sesiones se restauran automáticamente si el servidor se reinicia.
--   **Webhooks:** Recibe mensajes entrantes en tiempo real.
--   **Envío Multimedia:** Soporte para enviar imágenes y texto.
--   **Seguridad:** Endpoints protegidos por API Key.
--   **Dockerizado:** Fácil de desplegar y escalar.
+-   **Multi-Session:** Manages multiple WhatsApp numbers simultaneously.
+-   **Persistence:** Sessions are automatically restored if the server restarts.
+-   **Webhooks:** Receive incoming messages in real time.
+-   **Multimedia Sending:** Support for sending images and text.
+-   **Security:** Endpoints protected by API Key.
+-   **Dockerized:** Easy to deploy and scale.
 
-## 🏁 Quick Start con Docker Compose
+## 🏁 Quick Start with Docker Compose
 
-La forma más sencilla de levantar el servidor es usando `docker-compose`.
+The easiest way to start the server is using `docker-compose`.
 
-1.  **Crea un archivo `docker-compose.yml`** con el siguiente contenido:
+1.  **Create a `docker-compose.yml` file** with the following content:
 
     ```yml
     version: "3.8"
     services:
         baileys-server:
-            image: tu-usuario-dockerhub/baileys-server:latest # Reemplaza con tu imagen
+            image: your-dockerhub-user/baileys-server:latest # Replace with your image
             container_name: baileys-pro
             restart: always
             ports:
@@ -32,81 +32,81 @@ La forma más sencilla de levantar el servidor es usando `docker-compose`.
                 - ./sessions:/usr/src/app/sessions
     ```
 
-2.  **Crea un archivo `.env`** para tus variables de entorno:
+2.  **Create a `.env` file** for your environment variables:
 
     ```
-    # Puerto de la aplicación
+    # Application port
     PORT=3000
 
-    # Clave secreta para proteger la API
-    API_KEY=tu_clave_super_secreta_muy_larga
+    # Secret key to protect the API
+    API_KEY=your_super_secret_very_long_key
     ```
 
-3.  **Crea la carpeta de sesiones** y dale los permisos correctos:
+3.  **Create the sessions folder** and give it the correct permissions:
 
     ```bash
     mkdir -p sessions
     sudo chown -R 1000:1000 sessions
     ```
 
-4.  **Levanta el servidor:**
+4.  **Start the server:**
     ```bash
     docker-compose up -d
     ```
 
-Tu servidor estará corriendo en `http://localhost:3000`.
+Your server will be running on `http://localhost:3000`.
 
-## 📚 Documentación de la API
+## 📚 API Documentation
 
-La API cuenta con documentación interactiva **Swagger / OpenAPI**.
+The API has interactive **Swagger / OpenAPI** documentation.
 
-Una vez que el servidor esté corriendo, puedes acceder a la documentación en:
+Once the server is running, you can access the documentation at:
 **[http://localhost:3000/api-docs](http://localhost:3000/api-docs)**
 
-### Ejemplos con `curl`
+### Examples with `curl`
 
-Asegúrate de reemplazar `{sessionId}`, `{number}` y tu API Key.
+Make sure to replace `{sessionId}`, `{number}` and your API Key.
 
-**Iniciar una Sesión:**
+**Start a Session:**
 
 ```bash
 curl -X POST http://localhost:3000/api/sessions/start \
 -H "Content-Type: application/json" \
--H "x-api-key: tu_clave_super_secreta" \
+-H "x-api-key: your_super_secret_key" \
 -d '{
-    "sessionId": "mi-tienda",
-    "webhook": "[https://webhook.site/](https://webhook.site/)..."
+    "sessionId": "my-store",
+    "webhook": "https://webhook.site/..."
 }'
 ```
 
-**Enviar un Mensaje de Texto:**
+**Send a Text Message:**
 
 ```bash
-curl -X POST http://localhost:3000/api/sessions/mi-tienda/send-message \
+curl -X POST http://localhost:3000/api/sessions/my-store/send-message \
 -H "Content-Type: application/json" \
--H "x-api-key: tu_clave_super_secreta" \
+-H "x-api-key: your_super_secret_key" \
 -d '{
     "number": "573001234567",
-    "message": "Hola desde la API! 🤖"
+    "message": "Hello from the API! 🤖"
 }'
 ```
 
-## 🪝 Webhooks
+## 💻 Webhooks
 
-Para recibir mensajes, proporciona una URL en el endpoint de `start`. Recibirás un `POST` con el siguiente formato:
+To receive messages, provide a URL in the `start` endpoint. You will receive a `POST` with the following format:
 
 ```json
 {
-    "sessionId": "mi-tienda",
+    "sessionId": "my-store",
     "timestamp": "2025-09-09T22:30:00.000Z",
     "message": {
         "id": "ABCDEFG12345",
         "from": "573001234567@s.whatsapp.net",
-        "text": "¡Hola! Quisiera más información."
+        "text": "Hello! I'd like more information."
     }
 }
 ```
 
-## 💾 Persistencia de Datos
+## 💾 Data Persistence
 
-El servidor guarda las credenciales en la carpeta `/usr/src/app/sessions` dentro del contenedor. Es **crucial** montar un volumen en esta ruta (`-v ./sessions:/usr/src/app/sessions`) para asegurar que tus sesiones no se pierdan.
+The server saves credentials in the `/usr/src/app/sessions` folder inside the container. It is **crucial** to mount a volume at this path (`-v ./sessions:/usr/src/app/sessions`) to ensure your sessions are not lost.

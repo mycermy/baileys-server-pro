@@ -7,12 +7,12 @@ const swaggerDefinition = {
         title: "Baileys Server Pro API",
         version: "1.0.0",
         description:
-            "Una API REST para interactuar con WhatsApp a través de Baileys, gestionando múltiples sesiones.",
+            "A REST API to interact with WhatsApp through Baileys, managing multiple sessions.",
     },
     servers: [
         {
             url: "http://localhost:3000",
-            description: "Servidor de Desarrollo",
+            description: "Development Server",
         },
     ],
     components: {
@@ -33,7 +33,7 @@ const swaggerDefinition = {
 
 const options = {
     swaggerDefinition,
-    // Rutas a los archivos que contienen las anotaciones de la API
+    // Paths to files containing API annotations
     apis: ["./src/api/routes/*.js"],
 };
 
