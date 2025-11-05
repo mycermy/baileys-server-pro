@@ -3,9 +3,20 @@
 
 echo "🔍 Checking for Baileys volumes..."
 
-# Check if volumes exist
-if ! docker volume ls | grep -q baileys_sessions; then
-    echo "❌ Volume 'baileys_sessions' not found!"
+# Check for volumes with different naming patterns
+SESSIONS_VOLUME=""
+UPLOADS_VOLUME=""
+
+# Try stack-prefixed names first (Portainer default)
+if docker volume ls | grep -q "baileys-server-pro_baileys_sessions"; then
+    SESSIONS_VOLUME="baileys-server-pro_baileys_sessions"
+    UPLOADS_VOLUME="baileys-server-pro_baileys_uploads"
+# Try simple names
+elif docker volume ls | grep -q "baileys_sessions"; then
+    SESSIONS_VOLUME="baileys_sessions"
+    UPLOADS_VOLUME="baileys_uploads"
+else
+    echo "❌ Baileys volumes not found!"
     echo ""
     echo "📋 Available volumes:"
     docker volume ls
@@ -16,11 +27,13 @@ if ! docker volume ls | grep -q baileys_sessions; then
 fi
 
 echo "✅ Volumes found!"
+echo "   - $SESSIONS_VOLUME"
+echo "   - $UPLOADS_VOLUME"
 echo ""
 
 # Get volume paths
-SESSIONS_PATH=$(docker volume inspect baileys_sessions --format '{{ .Mountpoint }}')
-UPLOADS_PATH=$(docker volume inspect baileys_uploads --format '{{ .Mountpoint }}')
+SESSIONS_PATH=$(docker volume inspect "$SESSIONS_VOLUME" --format '{{ .Mountpoint }}')
+UPLOADS_PATH=$(docker volume inspect "$UPLOADS_VOLUME" --format '{{ .Mountpoint }}')
 
 echo "📁 Volume paths:"
 echo "   Sessions: $SESSIONS_PATH"
