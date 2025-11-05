@@ -6,10 +6,12 @@ services:
     container_name: baileys-server-pro
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:3000"
+      # Bind to localhost only - not accessible from outside VPS
+      - "127.0.0.1:3000:3000"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-3000}
+      - API_BASE_URL=${API_BASE_URL:-}
     volumes:
       - baileys_sessions:/usr/src/app/sessions
       - baileys_uploads:/usr/src/app/uploads

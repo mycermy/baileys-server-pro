@@ -31,8 +31,23 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/sessions", sessionRoutes);
 
-app.listen(PORT, () => {
+// Serve index.html at root path
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// API endpoint to get server configuration
+app.get('/api/config', (req, res) => {
+    res.json({
+        apiBaseUrl: process.env.API_BASE_URL || req.protocol + '://' + req.get('host')
+    });
+});
+
+// Bind to 127.0.0.1 (localhost only) for security
+// Only accessible from within the VPS/Docker network
+app.listen(PORT, '127.0.0.1', () => {
     logger.info(banner);
-    logger.info(`✅ Server listening on http://localhost:${PORT}`);
-    logger.info(`📕 Documentation available at http://localhost:${PORT}/api-docs`);
+    logger.info(`✅ Server listening on http://127.0.0.1:${PORT} (localhost only)`);
+    logger.info(`📕 Documentation available at http://127.0.0.1:${PORT}/api-docs`);
+    logger.info(`🔒 Security: Only accessible from localhost/Docker network`);
 });

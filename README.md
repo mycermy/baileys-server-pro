@@ -142,7 +142,29 @@ Updates HTML/CSS/JS files without rebuilding the Docker image.
 - **`./uploads`** → `/usr/src/app/uploads` (uploaded files)
 - **`./public`** → `/usr/src/app/public` (web interface - bind mounted for live updates)
 
-## 📚 API Documentation
+## � Security & Deployment Guides
+
+### **For VPS Deployment (Localhost-Only Security)**
+See **[VPS_DEPLOYMENT_GUIDE.md](VPS_DEPLOYMENT_GUIDE.md)** for:
+- Secure localhost-only configuration
+- Docker network setup
+- Troubleshooting guide
+- SSH tunnel access
+
+### **Security Quick Reference**
+See **[SECURITY_SETUP.md](SECURITY_SETUP.md)** for:
+- Localhost-only access explanation
+- Port binding configuration
+- Security checklist
+- Common issues and solutions
+
+**Default Security Configuration:**
+- ✅ Server binds to `127.0.0.1` (localhost only)
+- ✅ Docker port mapping: `127.0.0.1:3000:3000`
+- ✅ Not accessible from internet (protected from attacks)
+- ✅ Only accessible from same VPS/Docker network
+
+## �📚 API Documentation
 
 The API has interactive **Swagger / OpenAPI** documentation.
 
