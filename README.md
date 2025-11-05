@@ -142,7 +142,14 @@ Updates HTML/CSS/JS files without rebuilding the Docker image.
 - **`./uploads`** → `/usr/src/app/uploads` (uploaded files)
 - **`./public`** → `/usr/src/app/public` (web interface - bind mounted for live updates)
 
-## � Security & Deployment Guides
+## 🔒 Security & Deployment Guides
+
+### **Permission Issues? (EACCES Error)**
+See **[PERMISSION_FIX.md](PERMISSION_FIX.md)** for:
+- Fixing "EACCES: permission denied" errors
+- Docker volume permission issues
+- Step-by-step troubleshooting
+- Run `./fix-permissions.sh` on your VPS
 
 ### **For VPS Deployment (Localhost-Only Security)**
 See **[VPS_DEPLOYMENT_GUIDE.md](VPS_DEPLOYMENT_GUIDE.md)** for:

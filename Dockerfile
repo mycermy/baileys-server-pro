@@ -18,17 +18,21 @@ COPY package*.json ./
 RUN npm install --omit=dev --clean
 COPY --from=builder /usr/src/app .
 
-# -> Crea la carpeta de uploads antes de cambiar de usuario
-RUN mkdir -p /usr/src/app/uploads
+# Create required directories before changing ownership
+RUN mkdir -p /usr/src/app/sessions /usr/src/app/uploads
 
 EXPOSE 3000
 
-# Le damos al usuario 'node' la propiedad del directorio de la aplicación
-# para que pueda crear la carpeta 'sessions' y escribir en ella.
+# Give the 'node' user ownership of the application directory
+# This ensures the user can create folders and write to 'sessions' and 'uploads'
 RUN chown -R node:node /usr/src/app
 
-# Creamos un usuario no-root para correr la aplicación por seguridad
+# Run application as non-root user for security
+# Note: If you encounter permission issues with volumes, you may need to:
+# 1. Set user: "node:node" in docker-compose.yml, or
+# 2. Fix host directory permissions, or
+# 3. Comment out the USER line below (less secure)
 USER node
 
-# El comando para iniciar la aplicación
+# The command to start the application
 CMD [ "node", "server.js" ]

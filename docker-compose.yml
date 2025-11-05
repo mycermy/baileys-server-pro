@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     container_name: baileys-server-pro
     restart: unless-stopped
+    # Run as node user (UID 1000, GID 1000) for proper permissions
+    user: "1000:1000"
     ports:
       # Bind to localhost only - not accessible from outside VPS
       - "127.0.0.1:${PORT:-3000}:3000"
