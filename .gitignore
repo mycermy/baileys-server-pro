@@ -1,4 +1,25 @@
 node_modules
 sessions
-
 mock.json
+node_modules/
+sessions/
+
+# Environment files
+.env
+.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Build / output
+dist/
+build/
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
