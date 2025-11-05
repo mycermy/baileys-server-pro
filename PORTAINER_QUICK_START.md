@@ -1,147 +1,91 @@
 # 🚀 Portainer Deployment Guide
 
-## Complete Setup in 3 Steps
+## Setup in 3 Steps
 
 ### Step 1: Deploy Stack in Portainer
 
-1. Open Portainer web interface
-2. Go to **Stacks** → **Add Stack**
-3. Fill in:
+1. Open Portainer → **Stacks** → **Add Stack**
+2. Fill in:
    - **Name**: `baileys-server-pro`
-   - **Build method**: Select **Repository**
+   - **Build method**: ✅ **Repository**
    - **Repository URL**: `https://github.com/mycermy/baileys-server-pro`
    - **Repository reference**: `refs/heads/local-dev`
    - **Compose path**: `portainer-stack.yml`
-4. Click **Deploy the stack**
-
-✅ Stack will build and start (but will have permission errors initially)
+3. Click **Deploy the stack**
 
 ---
 
 ### Step 2: Fix Permissions on VPS
 
-**First, check if volumes were created:**
+SSH into your VPS and run ONE of these:
 
+**Option A: One-liner (for root user)**
 ```bash
-# SSH into your VPS
-ssh user@zulfadli.com
-
-# Check for volumes
-docker volume ls | grep baileys
-```
-
-**If you see the volumes, run this command:**
-
-```bash
-# Run as root or with sudo
-docker volume inspect baileys_sessions --format '{{ .Mountpoint }}' | xargs chown -R 1000:1000 && \
-docker volume inspect baileys_uploads --format '{{ .Mountpoint }}' | xargs chown -R 1000:1000 && \
+docker volume inspect baileys-server-pro_baileys_sessions --format '{{ .Mountpoint }}' | xargs chown -R 1000:1000 && \
+docker volume inspect baileys-server-pro_baileys_uploads --format '{{ .Mountpoint }}' | xargs chown -R 1000:1000 && \
 echo "✅ Permissions fixed!"
 ```
 
-**Or use the provided script (recommended):**
-
+**Option B: Use the automated script**
 ```bash
-# Option 1: If you cloned the repo on VPS
-cd baileys-server-pro
-./fix-portainer-volumes.sh
-
-# Option 2: Download and run directly
-curl -o fix-portainer-volumes.sh https://raw.githubusercontent.com/mycermy/baileys-server-pro/local-dev/fix-portainer-volumes.sh
-chmod +x fix-portainer-volumes.sh
-./fix-portainer-volumes.sh
+curl -o fix.sh https://raw.githubusercontent.com/mycermy/baileys-server-pro/local-dev/fix-portainer-volumes.sh
+chmod +x fix.sh
+./fix.sh
 ```
-
-**If volumes don't exist yet:**
-1. The stack deployment might have failed
-2. Check Portainer logs for build errors
-3. Make sure you're using the Repository method (not Web editor)
 
 ---
 
 ### Step 3: Restart Container
 
-**In Portainer:**
-- Go to **Containers** → Find `baileys-server-pro`
-- Click **Restart**
-
-**Or via SSH:**
 ```bash
 docker restart baileys-server-pro
+docker logs baileys-server-pro --tail 20
 ```
 
-**Check logs:**
-- In Portainer: **Containers** → `baileys-server-pro` → **Logs**
-- Should see: `✅ Server listening on http://127.0.0.1:3000`
-- No more EACCES errors! 🎉
+**Expected output:**
+```
+✅ Server listening on http://127.0.0.1:3000
+```
+
+✅ No more EACCES errors!
+
+---
+
+## Security Configuration
+
+- 🔒 **Localhost only**: Server binds to `127.0.0.1:3000`
+- 🛡️ **Not accessible from internet** (protected from attacks)
+- ✅ **Only your VPS apps can access it** (like ZRInv)
+
+**Use in your ZRInv project:**
+```javascript
+const BAILEYS_API_URL = 'http://localhost:3000';
+```
 
 ---
 
 ## Troubleshooting
 
-### Error: "pull access denied for baileys-server-pro"
-
-✅ **Fixed!** The updated `portainer-stack.yml` now uses `build:` instead of `image:`
+### Error: "pull access denied"
+✅ Fixed - use Repository method in Portainer
 
 ### Error: "EACCES: permission denied"
+Run the permission fix script (Step 2)
 
-Run the permission fix script (Step 2 above)
-
-### Error: "version is obsolete"
-
-This is just a warning, you can safely ignore it or remove `version: "3.8"` from the YAML
-
-### Need to Update Code?
-
-1. **Push changes to GitHub**
-2. **In Portainer**: Go to your stack → Click **Pull and redeploy**
-
----
-
-## What's Configured
-
-✅ **Security**: Localhost-only access (`127.0.0.1:3000`)  
-✅ **Permissions**: Runs as non-root user (UID 1000)  
-✅ **Persistence**: Volumes for sessions and uploads  
-✅ **Auto-restart**: Container restarts on failure  
-✅ **Health checks**: Automatic monitoring  
-
----
-
-## Testing Your Deployment
-
-### From VPS (should work):
+### Check volumes exist:
 ```bash
-curl http://localhost:3000/api/config
+docker volume ls | grep baileys
 ```
 
-### From ZRInv project:
-```javascript
-const BAILEYS_API_URL = 'http://localhost:3000';
-```
-
-### From internet (should fail - security):
+### Check container status:
 ```bash
-curl http://zulfadli.com:3000
-# Connection refused or timeout (this is good!)
+docker ps | grep baileys
+docker logs baileys-server-pro
 ```
 
 ---
 
-## Quick Reference
+## Update Code
 
-| Action | Command/Location |
-|--------|-----------------|
-| View logs | Portainer → Containers → baileys-server-pro → Logs |
-| Restart | Portainer → Containers → baileys-server-pro → Restart |
-| Update code | Portainer → Stacks → baileys-server-pro → Pull and redeploy |
-| Fix permissions | SSH: `./fix-portainer-volumes.sh` |
-| Check status | `docker ps \| grep baileys` |
-
----
-
-## Need More Help?
-
-- 📖 Full permission guide: [PORTAINER_PERMISSION_FIX.md](PORTAINER_PERMISSION_FIX.md)
-- 🔒 Security setup: [SECURITY_SETUP.md](SECURITY_SETUP.md)
-- 🚀 VPS deployment: [VPS_DEPLOYMENT_GUIDE.md](VPS_DEPLOYMENT_GUIDE.md)
+1. Push changes to GitHub
+2. In Portainer → Stack → **Pull and redeploy**

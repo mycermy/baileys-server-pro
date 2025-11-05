@@ -152,33 +152,17 @@ Updates HTML/CSS/JS files without rebuilding the Docker image.
 - **`./uploads`** → `/usr/src/app/uploads` (uploaded files)
 - **`./public`** → `/usr/src/app/public` (web interface - bind mounted for live updates)
 
-## 🔒 Security & Deployment Guides
+## � Deploy to Portainer
 
-### **Permission Issues? (EACCES Error)**
-- **For Portainer Users**: See **[PORTAINER_PERMISSION_FIX.md](PORTAINER_PERMISSION_FIX.md)** ⭐
-- **For Docker Compose**: See **[PERMISSION_FIX.md](PERMISSION_FIX.md)**
+**📘 Quick Start**: See **[PORTAINER_QUICK_START.md](PORTAINER_QUICK_START.md)** for complete guide!
 
-Fixes "EACCES: permission denied" errors with Docker volumes
+### Quick Summary:
 
-### **For VPS Deployment (Localhost-Only Security)**
-See **[VPS_DEPLOYMENT_GUIDE.md](VPS_DEPLOYMENT_GUIDE.md)** for:
-- Secure localhost-only configuration
-- Docker network setup
-- Troubleshooting guide
-- SSH tunnel access
+1. **Deploy Stack** in Portainer using Repository method
+2. **Fix Permissions** on VPS: Run `./fix-portainer-volumes.sh`
+3. **Restart Container** and you're done! ✅
 
-### **Security Quick Reference**
-See **[SECURITY_SETUP.md](SECURITY_SETUP.md)** for:
-- Localhost-only access explanation
-- Port binding configuration
-- Security checklist
-- Common issues and solutions
-
-**Default Security Configuration:**
-- ✅ Server binds to `127.0.0.1` (localhost only)
-- ✅ Docker port mapping: `127.0.0.1:3000:3000`
-- ✅ Not accessible from internet (protected from attacks)
-- ✅ Only accessible from same VPS/Docker network
+### Detailed Instructions:
 
 ## �📚 API Documentation
 
