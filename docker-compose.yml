@@ -8,17 +8,18 @@ services:
     container_name: baileys-server-pro
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3000}
     volumes:
       - ./sessions:/usr/src/app/sessions
       - ./uploads:/usr/src/app/uploads
+      - ./public:/usr/src/app/public:ro  # Add this for live HTML updates
     networks:
       - baileys-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api-docs"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api-docs"]
       interval: 30s
       timeout: 10s
       retries: 3
