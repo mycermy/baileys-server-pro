@@ -9,14 +9,14 @@ const router = Router();
  * @swagger
  * tags:
  *   - name: Sessions
- *     description: Gestión del ciclo de vida de las sesiones de WhatsApp
+ *     description: Session lifecycle management
  */
 
 /**
  * @swagger
  * /api/sessions/start:
  *   post:
- *     summary: Inicia una nueva sesión de WhatsApp
+ *     summary: Start a new WhatsApp session
  *     tags: [Sessions]
  *     requestBody:
  *       required: true
@@ -29,15 +29,15 @@ const router = Router();
  *             properties:
  *               sessionId:
  *                 type: string
- *                 description: Identificador único para la sesión.
- *                 example: "tienda-1"
+ *                 description: Unique identifier for the session.
+ *                 example: "store-1"
  *               webhook:
  *                 type: string
- *                 description: URL opcional para recibir notificaciones de mensajes.
+ *                 description: Optional URL to receive message notifications.
  *                 example: "https://webhook.site/..."
  *     responses:
  *       '200':
- *         description: Sesión iniciada correctamente.
+ *         description: Session started successfully.
  */
 router.post("/start", SessionController.start);
 
@@ -45,7 +45,7 @@ router.post("/start", SessionController.start);
  * @swagger
  * /api/sessions/{sessionId}/status:
  *   get:
- *     summary: Obtiene el estado de una sesión específica
+ *     summary: Get the status of a specific session
  *     tags: [Sessions]
  *     parameters:
  *       - in: path
@@ -53,10 +53,10 @@ router.post("/start", SessionController.start);
  *         required: true
  *         schema:
  *           type: string
- *         description: El ID de la sesión.
+ *         description: The session ID.
  *     responses:
  *       '200':
- *         description: Estado de la sesión.
+ *         description: Session status.
  *         content:
  *           application/json:
  *             schema:
@@ -69,7 +69,7 @@ router.post("/start", SessionController.start);
  *                   example: "open"
  *                 qr:
  *                   type: string
- *                   description: Código QR en formato de texto si la sesión necesita ser escaneada.
+ *                   description: QR code string if the session needs to be scanned.
  *       '404':
  *         description: Sesión no encontrada.
  */
@@ -79,7 +79,7 @@ router.get("/:sessionId/status", SessionController.getStatus);
  * @swagger
  * /api/sessions/{sessionId}/send-message:
  *   post:
- *     summary: Envía un mensaje de texto
+ *     summary: Send a text message
  *     tags: [Sessions]
  *     parameters:
  *       - in: path
@@ -100,25 +100,25 @@ router.get("/:sessionId/status", SessionController.getStatus);
  *             properties:
  *               number:
  *                 type: string
- *                 description: "Número de teléfono del destinatario (ej: 573001234567)."
+ *                 description: "Recipient's phone number (e.g: 573001234567)."
  *               message:
  *                 type: string
- *                 description: El mensaje de texto a enviar.
+ *                 description: The text message to send.
  *     responses:
  *       '200':
- *         description: Mensaje enviado exitosamente.
+ *         description: Message sent successfully.
  *       '404':
  *         description: Sesión no encontrada.
  *       '503':
- *         description: La sesión no está abierta o lista para enviar mensajes.
+ *         description: The session is not open or ready to send messages.
  */
 router.post("/:sessionId/send-message", SessionController.sendMessage);
 
 /**
  * @swagger
- * /api/sessions/{sessionId}/send-image:
+ * /api/sessions/{sessionId}/send-message:
  *   post:
- *     summary: Envía un mensaje con una imagen
+ *     summary: Send a text message
  *     tags: [Sessions]
  *     parameters:
  *       - in: path
@@ -126,7 +126,7 @@ router.post("/:sessionId/send-message", SessionController.sendMessage);
  *         required: true
  *         schema:
  *           type: string
- *         description: El ID de la sesión.
+ *         description: The session ID.
  *     requestBody:
  *       required: true
  *       content:
@@ -139,21 +139,21 @@ router.post("/:sessionId/send-message", SessionController.sendMessage);
  *             properties:
  *               number:
  *                 type: string
- *                 description: "Número de teléfono del destinatario."
+ *                 description: "Recipient's phone number."
  *               caption:
  *                 type: string
- *                 description: "Texto opcional que acompaña a la imagen."
+ *                 description: "Optional text accompanying the image."
  *               image:
  *                 type: string
  *                 format: binary
- *                 description: "El archivo de imagen a enviar."
+ *                 description: "The image file to send."
  *     responses:
  *       '200':
- *         description: Imagen enviada exitosamente.
+ *         description: Image sent successfully.
  *       '400':
- *         description: Faltan parámetros requeridos.
+ *         description: Missing required parameters.
  *       '404':
- *         description: Sesión no encontrada.
+ *         description: Session not found.
  */
 router.post(
     "/:sessionId/send-image",
@@ -165,7 +165,7 @@ router.post(
  * @swagger
  * /api/sessions/{sessionId}/send-document:
  *   post:
- *     summary: Envía un mensaje con un documento (PDF, etc.)
+ *     summary: Send a message with a document (PDF, etc.)
  *     tags: [Sessions]
  *     parameters:
  *       - in: path
@@ -173,7 +173,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
- *         description: El ID de la sesión.
+ *         description: The session ID.
  *     requestBody:
  *       required: true
  *       content:
@@ -186,18 +186,18 @@ router.post(
  *             properties:
  *               number:
  *                 type: string
- *                 description: "Número de teléfono del destinatario."
+ *                 description: "Recipient's phone number."
  *               document:
  *                 type: string
  *                 format: binary
- *                 description: "El archivo del documento a enviar."
+ *                 description: "The document file to send."
  *     responses:
  *       '200':
- *         description: Documento enviado exitosamente.
+ *         description: Image sent successfully.
  *       '400':
- *         description: Faltan parámetros requeridos.
+ *         description: Missing required parameters.
  *       '404':
- *         description: Sesión no encontrada.
+ *         description: Session not found.
  */
 router.post(
     "/:sessionId/send-document",
@@ -209,7 +209,7 @@ router.post(
  * @swagger
  * /api/sessions/{sessionId}/end:
  *   delete:
- *     summary: Cierra una sesión y elimina sus datos
+ *     summary: Close a session and delete its data
  *     tags: [Sessions]
  *     parameters:
  *       - in: path
@@ -217,12 +217,12 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
- *         description: El ID de la sesión a cerrar.
+ *         description: The session ID to close.
  *     responses:
  *       '200':
- *         description: Sesión cerrada exitosamente.
+ *         description: Session closed successfully.
  *       '404':
- *         description: Sesión no encontrada.
+ *         description: Session not found.
  */
 router.delete("/:sessionId/end", SessionController.end);
 

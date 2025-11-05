@@ -33,6 +33,6 @@ app.use("/api/sessions", sessionRoutes);
 
 app.listen(PORT, () => {
     logger.info(banner);
-    logger.info(`✅ Servidor escuchando en http://localhost:${PORT}`);
-    logger.info(`📕 Documentación disponible en http://localhost:${PORT}/api-docs`);
+    logger.info(`✅ Server listening on http://localhost:${PORT}`);
+    logger.info(`📕 Documentation available at http://localhost:${PORT}/api-docs`);
 });

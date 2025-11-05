@@ -19,7 +19,7 @@ class SessionController {
         if (!sessionId) {
             return res.status(400).json({
                 success: false,
-                message: "El campo sessionId es requerido.",
+                message: "The sessionId field is required.",
             });
         }
 
@@ -28,14 +28,14 @@ class SessionController {
             res.status(200).json({
                 success: true,
                 message:
-                    "La sesión está iniciando. Consulta el estado para obtener el código QR.",
+                    "The session is starting. Check the status to get the QR code.",
                 sessionId: sessionId,
             });
         } catch (error) {
             logger.error({ error }, `Error al iniciar la sesión ${sessionId}`);
             res.status(500).json({
                 success: false,
-                message: "Error al iniciar la sesión.",
+                message: "Error starting the session.",
                 error: error.message,
             });
         }
@@ -55,7 +55,7 @@ class SessionController {
         if (!session) {
             return res
                 .status(404)
-                .json({ success: false, message: "Sesión no encontrada." });
+                .json({ success: false, message: "Session not found." });
         }
 
         res.status(200).json({
@@ -81,7 +81,7 @@ class SessionController {
         if (!session) {
             return res
                 .status(404)
-                .json({ success: false, message: "Sesión no encontrada." });
+                .json({ success: false, message: "Session not found." });
         }
 
         // If session failed, restart it here.
@@ -99,7 +99,7 @@ class SessionController {
                     success: true,
                     qr: session.qr,
                     message:
-                        "Proceso de conexión reiniciado. Nuevo QR generado.",
+                        "Process of connection restarted. New QR generated.",
                 });
             }, 2000);
             return;
@@ -109,7 +109,7 @@ class SessionController {
             return res.status(200).json({
                 success: true,
                 qr: null,
-                message: "La sesión ya está conectada.",
+                message: "The session is already connected.",
             });
         }
 
@@ -118,7 +118,7 @@ class SessionController {
                 success: true,
                 qr: null,
                 message:
-                    "El código QR no está disponible o está siendo generado.",
+                    "The QR code is not available or is being generated.",
             });
         }
 
@@ -142,7 +142,7 @@ class SessionController {
         if (!number || !message) {
             return res.status(400).json({
                 success: false,
-                message: "Los campos number y message son requeridos.",
+                message: "The number and message fields are required.",
             });
         }
 
@@ -151,7 +151,7 @@ class SessionController {
         if (!session) {
             return res
                 .status(404)
-                .json({ success: false, message: "Sesión no encontrada." });
+                .json({ success: false, message: "Session not found." });
         }
 
         try {
@@ -168,7 +168,7 @@ class SessionController {
             );
             res.status(500).json({
                 success: false,
-                message: "Error al enviar el mensaje.",
+                message: "Error sending the message.",
                 error: error.message,
             });
         }
@@ -192,23 +192,23 @@ class SessionController {
             if (file) await fs.unlink(file.path); // Limpia el archivo si algo más faltó
             return res.status(400).json({
                 success: false,
-                message: "El número y el archivo de imagen son requeridos.",
+                message: "The number and image file are required.",
             });
         }
 
         const session = SessionManager.getSession(sessionId);
         if (!session) {
-            await fs.unlink(file.path); // Limpia el archivo si la sesión no existe
+            await fs.unlink(file.path); // Clean the file if the session does not exist
             return res
                 .status(404)
-                .json({ success: false, message: "Sesión no encontrada." });
+                .json({ success: false, message: "Session not found." });
         }
 
         try {
             const result = await session.sendImage(number, file.path, caption);
             res.status(200).json({
                 success: true,
-                message: "Imagen enviada exitosamente.",
+                message: "Image sent successfully.",
                 details: result,
             });
         } catch (error) {
@@ -218,7 +218,7 @@ class SessionController {
             );
             res.status(500).json({
                 success: false,
-                message: "Error al enviar la imagen.",
+                message: "Error sending the image.",
                 error: error.message,
             });
         } finally {
@@ -247,7 +247,7 @@ class SessionController {
                 .json({
                     success: false,
                     message:
-                        "El número y el archivo de documento son requeridos.",
+                        "The number and document file are required.",
                 });
         }
 
@@ -256,7 +256,7 @@ class SessionController {
             await fs.unlink(file.path);
             return res
                 .status(404)
-                .json({ success: false, message: "Sesión no encontrada." });
+                .json({ success: false, message: "Session not found." });
         }
 
         try {
@@ -269,7 +269,7 @@ class SessionController {
             );
             res.status(200).json({
                 success: true,
-                message: "Documento enviado exitosamente.",
+                message: "Document sent successfully.",
                 details: result,
             });
         } catch (error) {
@@ -279,7 +279,7 @@ class SessionController {
             );
             res.status(500).json({
                 success: false,
-                message: "Error al enviar el documento.",
+                message: "Error sending the document.",
             });
         } finally {
             await fs.unlink(file.path);
@@ -300,12 +300,12 @@ class SessionController {
         if (result) {
             res.status(200).json({
                 success: true,
-                message: "Sesión cerrada exitosamente.",
+                message: "Session closed successfully.",
             });
         } else {
             res.status(404).json({
                 success: false,
-                message: "Sesión no encontrada.",
+                message: "Session not found.",
             });
         }
     }

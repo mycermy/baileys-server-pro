@@ -98,7 +98,7 @@ class WhatsappSession {
         }
 
         logger.info(
-            `[${this.sessionId}] Mensaje recibido de ${msg.key.remoteJid}`
+            `[${this.sessionId}] Message received from ${msg.key.remoteJid}`
         );
         
         // Identifica el tipo de mensaje
@@ -167,7 +167,7 @@ class WhatsappSession {
                     break;
                 
                 default:
-                    logger.warn(`[${this.sessionId}] Tipo de mensaje no manejado para descarga: ${messageType}`);
+                    logger.warn(`[${this.sessionId}] Unhandled message type for download: ${messageType}`);
                     payload.message.type = 'unsupported';
             }
 
@@ -178,13 +178,13 @@ class WhatsappSession {
                 headers: { "Content-Type": "application/json" },
             });
             logger.info(
-                `[${this.sessionId}] Webhook enviado a ${this.webhookUrl} (Tipo: ${messageType})`
+                `[${this.sessionId}] Webhook sent to ${this.webhookUrl} (Type: ${messageType})`
             );
 
         } catch (error) {
             logger.error(
                 { error },
-                `[${this.sessionId}] Error al procesar mensaje o enviar el webhook`
+                `[${this.sessionId}] Error processing message or sending webhook`
             );
         }
     }
@@ -199,7 +199,7 @@ class WhatsappSession {
         if (qr) this.qr = qr;
 
         logger.info(
-            `[${this.sessionId}] Actualización de conexión: ${this.status}`
+            `[${this.sessionId}] Connection update: ${this.status}`
         );
 
         if (connection === "close") {
@@ -207,20 +207,20 @@ class WhatsappSession {
             const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
             logger.warn(
-                `[${this.sessionId}] Conexión cerrada, motivo: ${statusCode}, reconectando: ${shouldReconnect}`
+                `[${this.sessionId}] Connection closed, reason: ${statusCode}, reconnecting: ${shouldReconnect}`
             );
 
             if (shouldReconnect) {
                 this.startReconnecting();
             } else {
                 logger.warn(
-                    `[${this.sessionId}] Sesión cerrada permanentemente (logout). Limpiando archivos...`
+                    `[${this.sessionId}] Session permanently closed (logout). Cleaning files...`
                 );
                 this.cleanup();
             }
         } else if (connection === "open") {
             logger.info(
-                `[${this.sessionId}] ¡Conexión establecida exitosamente!`
+                `[${this.sessionId}] Connection established successfully!`
             );
             this.retryCount = 0;
             this.qr = null;
@@ -236,7 +236,7 @@ class WhatsappSession {
 
         if (this.retryCount > this.maxRetry) {
             logger.error(
-                `[${this.sessionId}] Se ha alcanzado el número máximo de reintentos (${this.maxRetry}). Abortando.`
+                `[${this.sessionId}] Maximum number of retries reached (${this.maxRetry}). Aborting.`
             );
             this.status = "max_retries_reached";
             return;
@@ -248,9 +248,9 @@ class WhatsappSession {
         const totalDelay = Math.min(exponentialDelay + jitter, 300000);
 
         logger.info(
-            `[${this.sessionId}] Reintentando conexión... Intento #${
+            `[${this.sessionId}] Retrying connection... Attempt #${
                 this.retryCount
-            }. Esperando ${Math.round(totalDelay / 1000)} segundos.`
+            }. Waiting ${Math.round(totalDelay / 1000)} seconds.`
         );
 
         setTimeout(() => this.init(), totalDelay);
@@ -264,18 +264,18 @@ class WhatsappSession {
      */
     async sendMessage(number, message) {
         logger.info(
-            `[${this.sessionId}] Solicitud para enviar mensaje. Estado actual: "${this.status}"`
+            `[${this.sessionId}] Request to send message. Current status: "${this.status}"`
         );
 
         if (this.status !== "open" || this.isProcessingQueue) {
             this.messageQueue.push({ number, message });
 
             const reason = this.isProcessingQueue
-                ? "Cola en proceso"
-                : "Conexión no disponible";
+                ? "Queue in process"
+                : "Connection not available";
 
             logger.warn(
-                `[${this.sessionId}] Mensaje para ${number} encolado. Causa: ${reason}. Pendientes: ${this.messageQueue.length}`
+                `[${this.sessionId}] Message for ${number} queued. Reason: ${reason}. Pending: ${this.messageQueue.length}`
             );
 
             return {
@@ -298,11 +298,11 @@ class WhatsappSession {
      */
     async sendImage(recipient, filePath, caption = "") {
         logger.info(
-            `[${this.sessionId}] Solicitud para enviar imagen a ${recipient}. Estado: "${this.status}"`
+            `[${this.sessionId}] Request to send image to ${recipient}. Status: "${this.status}"`
         );
         if (this.status !== "open") {
             throw new Error(
-                "La sesión de WhatsApp no está abierta para enviar imágenes."
+                "The WhatsApp session is not open for sending images."
             );
         }
 
@@ -328,9 +328,9 @@ class WhatsappSession {
      * @throws {Error} If the session is not 'open'.
      */
     async sendDocument(recipient, filePath, fileName, mimetype = 'application/octet-stream') {
-        logger.info(`[${this.sessionId}] Solicitud para enviar documento a ${recipient}. Estado: "${this.status}"`);
+        logger.info(`[${this.sessionId}] Request to send document to ${recipient}. Status: "${this.status}"`);
         if (this.status !== "open") {
-            throw new Error("La sesión de WhatsApp no está abierta para enviar documentos.");
+            throw new Error("The WhatsApp session is not open for sending documents.");
         }
 
         const jid = recipient.includes("@")
@@ -370,7 +370,7 @@ class WhatsappSession {
         this.isProcessingQueue = true;
 
         logger.info(
-            `[${this.sessionId}] Iniciando procesamiento de cola. Mensajes pendientes: ${this.messageQueue.length}`
+            `[${this.sessionId}] Starting queue processing. Pending messages: ${this.messageQueue.length}`
         );
 
         while (this.messageQueue.length > 0) {
@@ -378,14 +378,14 @@ class WhatsappSession {
             try {
                 await this._performSendMessage(job.number, job.message);
                 logger.info(
-                    `[${this.sessionId}] Mensaje encolado enviado a ${job.number}. Pendientes: ${this.messageQueue.length}`
+                    `[${this.sessionId}] Queued message sent to ${job.number}. Pending: ${this.messageQueue.length}`
                 );
 
                 await new Promise((resolve) => setTimeout(resolve, 1000));
             } catch (error) {
                 logger.error(
                     { error },
-                    `[${this.sessionId}] Error al enviar mensaje encolado a ${job.number}. Se re-encolará.`
+                    `[${this.sessionId}] Error sending queued message to ${job.number}. It will be re-queued.`
                 );
 
                 this.messageQueue.unshift(job);
@@ -394,7 +394,7 @@ class WhatsappSession {
         }
 
         this.isProcessingQueue = false;
-        logger.info(`[${this.sessionId}] Procesamiento de cola finalizado.`);
+        logger.info(`[${this.sessionId}] Queue processing finished.`);
     }
 
     /**
@@ -407,12 +407,12 @@ class WhatsappSession {
             await fs.rm(this.authPath, { recursive: true, force: true });
             SessionManager.sessions.delete(this.sessionId);
             logger.info(
-                `[${this.sessionId}] Archivos de sesión eliminados correctamente.`
+                `[${this.sessionId}] Session files deleted successfully.`
             );
         } catch (error) {
             logger.error(
                 { error },
-                `[${this.sessionId}] Error al limpiar la carpeta de sesión`
+                `[${this.sessionId}] Error cleaning session folder`
             );
         }
     }

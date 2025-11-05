@@ -12,6 +12,6 @@ const SESSIONS_DIR = path.join(__dirname, "..", "..", "sessions");
 export function initializeDirectories() {
     if (!fs.existsSync(SESSIONS_DIR)) {
         fs.mkdirSync(SESSIONS_DIR, { recursive: true });
-        console.log("📁 Directorio de sesiones creado en:", SESSIONS_DIR);
+        console.log("📁 Sessions directory created at:", SESSIONS_DIR);
     }
 }
