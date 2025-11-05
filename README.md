@@ -15,46 +15,66 @@ A production-ready multi-session WhatsApp server using `@whiskeysockets/baileys`
 
 The easiest way to start the server is using `docker-compose`.
 
-1.  **Create a `docker-compose.yml` file** with the following content:
-
-    ```yml
-    version: "3.8"
-    services:
-        baileys-server:
-            image: your-dockerhub-user/baileys-server:latest # Replace with your image
-            container_name: baileys-pro
-            restart: always
-            ports:
-                - "3000:3000"
-            environment:
-                - API_KEY=${API_KEY}
-            volumes:
-                - ./sessions:/usr/src/app/sessions
-    ```
-
-2.  **Create a `.env` file** for your environment variables:
-
-    ```
-    # Application port
-    PORT=3000
-
-    # Secret key to protect the API
-    API_KEY=your_super_secret_very_long_key
-    ```
-
-3.  **Create the sessions folder** and give it the correct permissions:
-
+1.  **Copy the environment file:**
     ```bash
-    mkdir -p sessions
-    sudo chown -R 1000:1000 sessions
+    cp .env.example .env
     ```
 
-4.  **Start the server:**
+2.  **Create the sessions and uploads folders:**
+    ```bash
+    mkdir -p sessions uploads
+    ```
+
+3.  **Start the server:**
     ```bash
     docker-compose up -d
     ```
 
 Your server will be running on `http://localhost:3000`.
+
+## 🚢 Deploy to Portainer
+
+To deploy this server to your Portainer instance at `portainer.test/`:
+
+### Option 1: Using Repository (Recommended)
+1. **In Portainer** (`portainer.test/`):
+   - Go to **Stacks** → **Add Stack**
+   - **Name:** `baileys-server-pro`
+   - **Repository URL:** `https://github.com/dev-juanda01/baileys-server-pro`
+   - **Compose path:** `portainer-stack.yml`
+   - **Environment variables:**
+     - `NODE_ENV=production`
+     - `PORT=3000`
+
+2. **Deploy the stack** and access your server at the configured port.
+
+### Option 2: Build and Deploy Manually
+```bash
+# Build and deploy
+./deploy.sh your-registry.com v1.0.0
+
+# Or build locally
+docker build -t baileys-server-pro:latest .
+docker-compose up -d
+```
+
+## 🐳 Manual Docker Commands
+
+If you prefer manual Docker commands:
+
+```bash
+# Build the image
+docker build -t baileys-server-pro .
+
+# Run the container
+docker run -d \
+  --name baileys-server-pro \
+  -p 3000:3000 \
+  -v $(pwd)/sessions:/usr/src/app/sessions \
+  -v $(pwd)/uploads:/usr/src/app/uploads \
+  -e NODE_ENV=production \
+  baileys-server-pro
+```
 
 ## 📚 API Documentation
 
@@ -62,6 +82,13 @@ The API has interactive **Swagger / OpenAPI** documentation.
 
 Once the server is running, you can access the documentation at:
 **[http://localhost:3000/api-docs](http://localhost:3000/api-docs)**
+
+### 📖 Complete API Usage Examples
+
+For comprehensive API usage examples with detailed request/response samples, see:
+**[API_USAGE_EXAMPLES.md](API_USAGE_EXAMPLES.md)**
+
+This file contains complete examples for all endpoints including cURL commands, request/response formats, error handling, and integration patterns.
 
 ### Examples with `curl`
 

@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  baileys-server-pro:
+    image: baileys-server-pro:latest
+    container_name: baileys-server-pro
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - baileys_sessions:/usr/src/app/sessions
+      - baileys_uploads:/usr/src/app/uploads
+    networks:
+      - baileys-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api-docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+volumes:
+  baileys_sessions:
+    driver: local
+  baileys_uploads:
+    driver: local
+
+networks:
+  baileys-network:
+    driver: bridge

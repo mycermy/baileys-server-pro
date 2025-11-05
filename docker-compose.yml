@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  baileys-server-pro:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: baileys-server-pro
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - ./sessions:/usr/src/app/sessions
+      - ./uploads:/usr/src/app/uploads
+    networks:
+      - baileys-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api-docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  baileys-network:
+    driver: bridge
