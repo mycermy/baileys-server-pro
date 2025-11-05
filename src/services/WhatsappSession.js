@@ -45,6 +45,86 @@ class WhatsappSession {
 
         this.messageQueue = [];
         this.isProcessingQueue = false;
+
+        // Rate limiting properties
+        this.messageCount = { hour: 0, day: 0 };
+        this.lastReset = { hour: Date.now(), day: Date.now() };
+        this.rateLimits = {
+            perHour: 100,
+            perDay: 1000,
+            delayBetweenMessages: 2000 // 2 seconds minimum delay
+        };
+    }
+
+    /**
+     * Checks and enforces rate limits before sending messages.
+     * @returns {Promise<void>}
+     * @throws {Error} If rate limits are exceeded
+     */
+    async checkRateLimits() {
+        const now = Date.now();
+
+        // Reset hourly counter if needed
+        if (now - this.lastReset.hour >= 3600000) { // 1 hour = 3600000 ms
+            this.messageCount.hour = 0;
+            this.lastReset.hour = now;
+            logger.info(`[${this.sessionId}] Hourly message counter reset`);
+        }
+
+        // Reset daily counter if needed
+        if (now - this.lastReset.day >= 86400000) { // 1 day = 86400000 ms
+            this.messageCount.day = 0;
+            this.lastReset.day = now;
+            logger.info(`[${this.sessionId}] Daily message counter reset`);
+        }
+
+        // Check rate limits
+        if (this.messageCount.hour >= this.rateLimits.perHour) {
+            const resetTime = new Date(this.lastReset.hour + 3600000);
+            throw new Error(`Hourly rate limit exceeded (${this.rateLimits.perHour} messages/hour). Next reset: ${resetTime.toISOString()}`);
+        }
+
+        if (this.messageCount.day >= this.rateLimits.perDay) {
+            const resetTime = new Date(this.lastReset.day + 86400000);
+            throw new Error(`Daily rate limit exceeded (${this.rateLimits.perDay} messages/day). Next reset: ${resetTime.toISOString()}`);
+        }
+
+        // Increment counters
+        this.messageCount.hour++;
+        this.messageCount.day++;
+
+        // Add delay between messages to prevent rapid sending
+        if (this.rateLimits.delayBetweenMessages > 0) {
+            await new Promise(resolve => setTimeout(resolve, this.rateLimits.delayBetweenMessages));
+        }
+
+        logger.debug(`[${this.sessionId}] Rate limit check passed. Hour: ${this.messageCount.hour}/${this.rateLimits.perHour}, Day: ${this.messageCount.day}/${this.rateLimits.perDay}`);
+    }
+
+    /**
+     * Gets the current rate limit status for monitoring purposes.
+     * @returns {object} Current rate limit status
+     */
+    getRateLimitStatus() {
+        const now = Date.now();
+        const hourResetTime = new Date(this.lastReset.hour + 3600000);
+        const dayResetTime = new Date(this.lastReset.day + 86400000);
+
+        return {
+            hourly: {
+                used: this.messageCount.hour,
+                limit: this.rateLimits.perHour,
+                remaining: Math.max(0, this.rateLimits.perHour - this.messageCount.hour),
+                resetTime: hourResetTime.toISOString()
+            },
+            daily: {
+                used: this.messageCount.day,
+                limit: this.rateLimits.perDay,
+                remaining: Math.max(0, this.rateLimits.perDay - this.messageCount.day),
+                resetTime: dayResetTime.toISOString()
+            },
+            delayBetweenMessages: this.rateLimits.delayBetweenMessages
+        };
     }
 
     /**
@@ -294,7 +374,7 @@ class WhatsappSession {
      * @param {string} filePath - The local path to the image file.
      * @param {string} [caption=""] - Optional caption for the image.
      * @returns {Promise<object>} A promise that resolves with the Baileys message object.
-     * @throws {Error} If the session is not 'open'.
+     * @throws {Error} If the session is not 'open' or rate limits are exceeded.
      */
     async sendImage(recipient, filePath, caption = "") {
         logger.info(
@@ -305,6 +385,9 @@ class WhatsappSession {
                 "The WhatsApp session is not open for sending images."
             );
         }
+
+        // Check rate limits before sending
+        await this.checkRateLimits();
 
         const jid = recipient.includes("@")
             ? recipient
@@ -325,13 +408,16 @@ class WhatsappSession {
      * @param {string} [fileName='document'] - Optional file name for the document.
      * @param {string} [mimetype='application/octet-stream'] - Optional MIME type for the document.
      * @returns {Promise<object>} A promise that resolves with the Baileys message object.
-     * @throws {Error} If the session is not 'open'.
+     * @throws {Error} If the session is not 'open' or rate limits are exceeded.
      */
     async sendDocument(recipient, filePath, fileName, mimetype = 'application/octet-stream') {
         logger.info(`[${this.sessionId}] Request to send document to ${recipient}. Status: "${this.status}"`);
         if (this.status !== "open") {
             throw new Error("The WhatsApp session is not open for sending documents.");
         }
+
+        // Check rate limits before sending
+        await this.checkRateLimits();
 
         const jid = recipient.includes("@")
             ? recipient
@@ -354,6 +440,9 @@ class WhatsappSession {
      * @private
      */
     async _performSendMessage(number, message) {
+        // Check rate limits before sending
+        await this.checkRateLimits();
+
         const jid = number.includes("@") ? number : `${number}@s.whatsapp.net`;
         return this.sock.sendMessage(jid, { text: message });
     }
@@ -376,20 +465,29 @@ class WhatsappSession {
         while (this.messageQueue.length > 0) {
             const job = this.messageQueue.shift();
             try {
+                // Check rate limits before sending queued message
+                await this.checkRateLimits();
                 await this._performSendMessage(job.number, job.message);
                 logger.info(
                     `[${this.sessionId}] Queued message sent to ${job.number}. Pending: ${this.messageQueue.length}`
                 );
-
-                await new Promise((resolve) => setTimeout(resolve, 1000));
             } catch (error) {
-                logger.error(
-                    { error },
-                    `[${this.sessionId}] Error sending queued message to ${job.number}. It will be re-queued.`
-                );
-
-                this.messageQueue.unshift(job);
-                break;
+                if (error.message.includes('rate limit')) {
+                    logger.warn(
+                        `[${this.sessionId}] Rate limit hit while processing queue. Stopping queue processing.`
+                    );
+                    // Re-queue the message at the front
+                    this.messageQueue.unshift(job);
+                    break;
+                } else {
+                    logger.error(
+                        { error },
+                        `[${this.sessionId}] Error sending queued message to ${job.number}. It will be re-queued.`
+                    );
+                    // Re-queue the message at the front for retry
+                    this.messageQueue.unshift(job);
+                    break;
+                }
             }
         }
 

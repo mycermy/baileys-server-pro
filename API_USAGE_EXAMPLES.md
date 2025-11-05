@@ -336,11 +336,59 @@ curl -X DELETE http://localhost:3000/api/sessions/my-session-1/end
 
 ---
 
+### 8. Get Rate Limit Status
+
+**Endpoint:** `GET /api/sessions/{sessionId}/rate-limit-status`
+
+**Description:** Get the current rate limit status for a WhatsApp session.
+
+**Path Parameters:**
+- `sessionId` (string): The session identifier
+
+**cURL Example:**
+```bash
+curl -X GET http://localhost:3000/api/sessions/my-session-1/rate-limit-status
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "sessionId": "my-session-1",
+  "rateLimits": {
+    "hourly": {
+      "used": 45,
+      "limit": 100,
+      "remaining": 55,
+      "resetTime": "2025-11-06T16:00:00.000Z"
+    },
+    "daily": {
+      "used": 234,
+      "limit": 1000,
+      "remaining": 766,
+      "resetTime": "2025-11-07T00:00:00.000Z"
+    },
+    "delayBetweenMessages": 2000
+  }
+}
+```
+
+**Response (Session not found):**
+```json
+{
+  "success": false,
+  "error": "Session not found"
+}
+```
+
+---
+
 ## Status Codes
 
 - **200**: Success
 - **400**: Bad Request (missing parameters)
 - **404**: Session not found
+- **429**: Too Many Requests (rate limit exceeded)
 - **503**: Session not ready (not connected)
 
 ## Session States
@@ -376,7 +424,55 @@ Always check the `success` field in responses. If `false`, check the `error` or 
 
 ## Rate Limiting
 
-WhatsApp has rate limits. Avoid sending messages too frequently to prevent temporary blocks.
+This API implements comprehensive rate limiting to prevent WhatsApp account blocks and ensure compliance with WhatsApp's unofficial limits.
+
+### Rate Limits Implemented
+
+- **Per Hour**: 100 messages maximum
+- **Per Day**: 1,000 messages maximum
+- **Delay Between Messages**: 2 seconds minimum
+
+### Rate Limit Behavior
+
+When rate limits are approached or exceeded:
+
+1. **Automatic Throttling**: Messages are delayed to respect minimum intervals
+2. **Queue Management**: Excess messages are queued and processed when limits reset
+3. **Error Responses**: Rate limit violations return specific error messages with reset times
+
+### Rate Limit Error Response
+
+```json
+{
+  "success": false,
+  "error": "Hourly rate limit exceeded (100 messages/hour). Next reset: 2025-11-06T15:30:00.000Z"
+}
+```
+
+### Rate Limit Headers (Future Implementation)
+
+The API may include rate limit headers in responses:
+- `X-RateLimit-Limit-Hour`: Maximum messages per hour
+- `X-RateLimit-Remaining-Hour`: Remaining messages for current hour
+- `X-RateLimit-Reset-Hour`: Timestamp when hourly limit resets
+- `X-RateLimit-Limit-Day`: Maximum messages per day
+- `X-RateLimit-Remaining-Day`: Remaining messages for current day
+- `X-RateLimit-Reset-Day`: Timestamp when daily limit resets
+
+### Best Practices
+
+1. **Monitor Usage**: Track your message counts and plan accordingly
+2. **Implement Backoff**: If you receive rate limit errors, wait until the reset time
+3. **Distribute Load**: Use multiple sessions for high-volume messaging
+4. **Respect Limits**: Never attempt to bypass rate limiting
+5. **Handle Errors**: Implement proper error handling for rate limit responses
+
+### Rate Limit Reset Times
+
+- **Hourly Reset**: Occurs at the top of each hour
+- **Daily Reset**: Occurs at midnight UTC
+
+Rate limits are enforced per WhatsApp session, so each session has its own independent limits.
 
 ## File Upload Limits
 
@@ -385,6 +481,3 @@ WhatsApp has rate limits. Avoid sending messages too frequently to prevent tempo
 - Supported formats: JPG, PNG, PDF, DOC, DOCX, TXT, etc.
 
 ---
-
-*Generated for Baileys WhatsApp Server Pro - Reference Implementation*</content>
-<parameter name="filePath">/Users/zulfadliresources/Herd/baileys-server-pro/API_USAGE_EXAMPLES.md

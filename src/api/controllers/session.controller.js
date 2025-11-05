@@ -166,6 +166,16 @@ class SessionController {
                 { error },
                 `Error al enviar mensaje desde ${sessionId}`
             );
+
+            // Check if it's a rate limit error
+            if (error.message.includes('rate limit')) {
+                return res.status(429).json({
+                    success: false,
+                    message: "Rate limit exceeded.",
+                    error: error.message,
+                });
+            }
+
             res.status(500).json({
                 success: false,
                 message: "Error sending the message.",
@@ -204,6 +214,8 @@ class SessionController {
                 .json({ success: false, message: "Session not found." });
         }
 
+        let rateLimitError = false;
+
         try {
             const result = await session.sendImage(number, file.path, caption);
             res.status(200).json({
@@ -216,13 +228,26 @@ class SessionController {
                 { error },
                 `Error al enviar imagen desde ${sessionId}`
             );
+
+            // Check if it's a rate limit error
+            if (error.message.includes('rate limit')) {
+                rateLimitError = true;
+                return res.status(429).json({
+                    success: false,
+                    message: "Rate limit exceeded.",
+                    error: error.message,
+                });
+            }
+
             res.status(500).json({
                 success: false,
                 message: "Error sending the image.",
                 error: error.message,
             });
         } finally {
-            await fs.unlink(file.path);
+            if (!rateLimitError) {
+                await fs.unlink(file.path);
+            }
         }
     }
 
@@ -259,6 +284,8 @@ class SessionController {
                 .json({ success: false, message: "Session not found." });
         }
 
+        let rateLimitError = false;
+
         try {
             // -> Pasamos la ruta, nombre original Y el mimetype del archivo
             const result = await session.sendDocument(
@@ -277,12 +304,26 @@ class SessionController {
                 { error },
                 `Error al enviar documento desde ${sessionId}`
             );
+
+            // Check if it's a rate limit error
+            if (error.message.includes('rate limit')) {
+                rateLimitError = true;
+                return res.status(429).json({
+                    success: false,
+                    message: "Rate limit exceeded.",
+                    error: error.message,
+                });
+            }
+
             res.status(500).json({
                 success: false,
                 message: "Error sending the document.",
+                error: error.message,
             });
         } finally {
-            await fs.unlink(file.path);
+            if (!rateLimitError) {
+                await fs.unlink(file.path);
+            }
         }
     }
 
@@ -308,6 +349,31 @@ class SessionController {
                 message: "Session not found.",
             });
         }
+    }
+
+    /**
+     * Get the rate limit status for a WhatsApp session.
+     * @async
+     * @param {import('express').Request} req - Express request object. Requires sessionId in params.
+     * @param {import('express').Response} res - Express response object.
+     * @returns {Promise<void>}
+     */
+    async getRateLimitStatus(req, res) {
+        const { sessionId } = req.params;
+        const session = SessionManager.getSession(sessionId);
+
+        if (!session) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Session not found." });
+        }
+
+        const rateLimitStatus = session.getRateLimitStatus();
+        res.status(200).json({
+            success: true,
+            sessionId: sessionId,
+            rateLimits: rateLimitStatus,
+        });
     }
 }
 

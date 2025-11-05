@@ -228,10 +228,9 @@ router.delete("/:sessionId/end", SessionController.end);
 
 /**
  * @swagger
- * /api/sessions/{sessionId}/qr:
+ * /api/sessions/{sessionId}/rate-limit-status:
  *   get:
- *     summary: Get the QR code for a WhatsApp session
- *     description: Returns the QR code for the specified session if available. If the session is already connected or the QR is not available, returns a message.
+ *     summary: Get the rate limit status for a session
  *     tags: [Sessions]
  *     parameters:
  *       - in: path
@@ -239,10 +238,10 @@ router.delete("/:sessionId/end", SessionController.end);
  *         required: true
  *         schema:
  *           type: string
- *         description: Unique identifier for the session.
+ *         description: The session ID.
  *     responses:
  *       '200':
- *         description: QR code retrieved successfully or informative message.
+ *         description: Rate limit status retrieved successfully.
  *         content:
  *           application/json:
  *             schema:
@@ -250,16 +249,38 @@ router.delete("/:sessionId/end", SessionController.end);
  *               properties:
  *                 success:
  *                   type: boolean
- *                 qr:
+ *                 sessionId:
  *                   type: string
- *                   nullable: true
- *                   description: QR code string or null if not available.
- *                 message:
- *                   type: string
- *                   description: Informative message about the QR code status.
+ *                 rateLimits:
+ *                   type: object
+ *                   properties:
+ *                     hourly:
+ *                       type: object
+ *                       properties:
+ *                         used:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         remaining:
+ *                           type: integer
+ *                         resetTime:
+ *                           type: string
+ *                     daily:
+ *                       type: object
+ *                       properties:
+ *                         used:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         remaining:
+ *                           type: integer
+ *                         resetTime:
+ *                           type: string
+ *                     delayBetweenMessages:
+ *                       type: integer
  *       '404':
  *         description: Session not found.
  */
-router.get("/:sessionId/qr", SessionController.getQrCode);
+router.get("/:sessionId/rate-limit-status", SessionController.getRateLimitStatus);
 
 export default router;
