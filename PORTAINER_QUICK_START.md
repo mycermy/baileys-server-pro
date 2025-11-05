@@ -10,8 +10,13 @@
    - **Build method**: ✅ **Repository**
    - **Repository URL**: `https://github.com/mycermy/baileys-server-pro`
    - **Repository reference**: `refs/heads/local-dev`
-   - **Compose path**: `portainer-stack.yml`
+   - **Compose path**: `portainer-stack.yml` ⚠️ **IMPORTANT: Must be exactly this**
 3. Click **Deploy the stack**
+
+⚠️ **Common Issue**: If you see "mounts denied" or "/data/compose" error:
+- Make sure **Compose path** is set to `portainer-stack.yml` (NOT `docker-compose.yml`)
+- The `portainer-stack.yml` uses Docker volumes (not bind mounts)
+- If error persists, delete the stack and recreate it with correct settings
 
 ---
 
