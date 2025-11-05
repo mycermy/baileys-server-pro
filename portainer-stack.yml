@@ -2,7 +2,10 @@ version: "3.8"
 
 services:
   baileys-server-pro:
-    image: baileys-server-pro:latest
+    # Build from repository instead of pulling pre-built image
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: baileys-server-pro
     restart: unless-stopped
     # Run as node user (UID 1000, GID 1000) for proper permissions

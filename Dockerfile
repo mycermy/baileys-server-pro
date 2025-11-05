@@ -23,6 +23,10 @@ RUN mkdir -p /usr/src/app/sessions /usr/src/app/uploads
 
 EXPOSE 3000
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Give the 'node' user ownership of the application directory
 # This ensures the user can create folders and write to 'sessions' and 'uploads'
 RUN chown -R node:node /usr/src/app
@@ -33,6 +37,9 @@ RUN chown -R node:node /usr/src/app
 # 2. Fix host directory permissions, or
 # 3. Comment out the USER line below (less secure)
 USER node
+
+# Set entrypoint
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 # The command to start the application
 CMD [ "node", "server.js" ]

@@ -65,7 +65,17 @@ Your server will be running on `http://localhost:3000`.
 
 ## 🚢 Deploy to Portainer
 
-To deploy this server to your Portainer instance at `portainer.test/`:
+**📘 Quick Start**: See **[PORTAINER_QUICK_START.md](PORTAINER_QUICK_START.md)** for complete 3-step guide!
+
+### Quick Summary:
+
+1. **Deploy Stack** in Portainer using Repository method
+2. **Fix Permissions** on VPS: `./fix-portainer-volumes.sh`
+3. **Restart Container** and you're done! ✅
+
+### Detailed Instructions:
+
+To deploy this server to your Portainer instance:
 
 ### Option 1: Using Repository (Recommended)
 1. **In Portainer** (`portainer.test/`):
@@ -145,11 +155,10 @@ Updates HTML/CSS/JS files without rebuilding the Docker image.
 ## 🔒 Security & Deployment Guides
 
 ### **Permission Issues? (EACCES Error)**
-See **[PERMISSION_FIX.md](PERMISSION_FIX.md)** for:
-- Fixing "EACCES: permission denied" errors
-- Docker volume permission issues
-- Step-by-step troubleshooting
-- Run `./fix-permissions.sh` on your VPS
+- **For Portainer Users**: See **[PORTAINER_PERMISSION_FIX.md](PORTAINER_PERMISSION_FIX.md)** ⭐
+- **For Docker Compose**: See **[PERMISSION_FIX.md](PERMISSION_FIX.md)**
+
+Fixes "EACCES: permission denied" errors with Docker volumes
 
 ### **For VPS Deployment (Localhost-Only Security)**
 See **[VPS_DEPLOYMENT_GUIDE.md](VPS_DEPLOYMENT_GUIDE.md)** for:
