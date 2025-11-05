@@ -29,31 +29,41 @@ echo "Current branch: ${CURRENT_BRANCH}"
 if [ "${CURRENT_BRANCH}" != "${BRANCH}" ]; then
     echo "Switching to branch: ${BRANCH}"
     git checkout ${BRANCH}
-    git pull origin ${BRANCH}
+fi
+
+# Check for local changes
+if [[ -n $(git status --porcelain) ]]; then
+    echo "⚠️  Warning: You have uncommitted local changes!"
+    echo "These changes will be used for deployment but not pushed to origin."
+    echo "Consider committing and pushing your changes first."
+    echo
 else
-    echo "Already on branch: ${BRANCH}"
+    echo "Pulling latest changes from origin..."
     git pull origin ${BRANCH}
 fi
 
 echo
-docker build -t ${IMAGE_NAME} .
+echo "🔄 Redeploying container..."
+docker-compose down
+docker-compose build --no-cache  # Force rebuild with new code
+docker-compose up -d
+echo "✅ Container redeployed!"
 
-# Push to registry (skip if localhost)
+# Build and tag for registry deployment (only if registry is specified)
 if [[ "${REGISTRY}" != "localhost"* ]]; then
+    echo "🏷️  Tagging image for registry..."
+    docker tag baileys-server-pro-baileys-server-pro ${IMAGE_NAME}
     echo "⬆️  Pushing image to registry..."
     docker push ${IMAGE_NAME}
 fi
-
 echo
-echo "✅ Build complete!"
-echo "Image: ${IMAGE_NAME}"
+echo "✅ Deployment complete!"
+echo "Local Image: baileys-server-pro-baileys-server-pro"
+if [[ "${REGISTRY}" != "localhost"* ]]; then
+    echo "Registry Image: ${IMAGE_NAME}"
+fi
 echo
-echo "� Redeploying container..."
-docker-compose down
-docker-compose up -d
-echo "✅ Container redeployed!"
-echo
-echo " Portainer Deployment Instructions:"
+echo "📋 Portainer Deployment Instructions:"
 echo "1. Go to portainer.test/"
 echo "2. Navigate to Stacks → Add Stack"
 echo "3. Name: baileys-server-pro"
