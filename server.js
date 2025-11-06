@@ -34,15 +34,10 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
 
+// API routes must come BEFORE static middleware
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/sessions", sessionRoutes);
-
-// Serve index.html at root path
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-});
 
 // API endpoint to get server configuration
 app.get('/api/config', (req, res) => {
@@ -54,6 +49,14 @@ app.get('/api/config', (req, res) => {
 // Add a simple health check endpoint
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Static files served AFTER API routes
+app.use(express.static(path.join(__dirname, "public")));
+
+// Serve index.html at root path (after static middleware)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // Listen on 0.0.0.0 inside container (required for Docker port mapping)
