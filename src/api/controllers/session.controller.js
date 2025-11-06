@@ -255,14 +255,14 @@ class SessionController {
      * Sends a document message using a WhatsApp session.
      * Requires the session to be open. Handles file upload via Multer.
      * @async
-     * @param {import('express').Request} req - Express request object. Requires sessionId in params, number in body, and a document file from Multer.
+     * @param {import('express').Request} req - Express request object. Requires sessionId in params, number and optional caption in body, and a document file from Multer.
      * @param {import('express').Response} res - Express response object.
      * @returns {Promise<void>}
      * @throws {Error} If the session is not found, required parameters are missing, or an error occurs during document sending.
      */
     async sendDocument(req, res) {
         const { sessionId } = req.params;
-        const { number } = req.body;
+        const { number, caption } = req.body;
         const file = req.file;
 
         if (!number || !file) {
@@ -287,12 +287,13 @@ class SessionController {
         let rateLimitError = false;
 
         try {
-            // -> Pasamos la ruta, nombre original Y el mimetype del archivo
+            // -> Pasamos la ruta, nombre original, mimetype Y caption del archivo
             const result = await session.sendDocument(
                 number,
                 file.path,
                 file.originalname,
-                file.mimetype
+                file.mimetype,
+                caption
             );
             res.status(200).json({
                 success: true,

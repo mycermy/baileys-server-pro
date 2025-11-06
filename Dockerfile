@@ -13,7 +13,7 @@ FROM node:18-alpine
 WORKDIR /usr/src/app
 
 ENV NODE_ENV=production
-RUN apk add --no-cache git
+RUN apk add --no-cache git curl
 COPY package*.json ./
 RUN npm install --omit=dev --clean
 COPY --from=builder /usr/src/app .

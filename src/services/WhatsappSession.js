@@ -407,10 +407,11 @@ class WhatsappSession {
      * @param {string} filePath - The local path to the document file.
      * @param {string} [fileName='document'] - Optional file name for the document.
      * @param {string} [mimetype='application/octet-stream'] - Optional MIME type for the document.
+     * @param {string} [caption=''] - Optional caption/message for the document.
      * @returns {Promise<object>} A promise that resolves with the Baileys message object.
      * @throws {Error} If the session is not 'open' or rate limits are exceeded.
      */
-    async sendDocument(recipient, filePath, fileName, mimetype = 'application/octet-stream') {
+    async sendDocument(recipient, filePath, fileName, mimetype = 'application/octet-stream', caption = '') {
         logger.info(`[${this.sessionId}] Request to send document to ${recipient}. Status: "${this.status}"`);
         if (this.status !== "open") {
             throw new Error("The WhatsApp session is not open for sending documents.");
@@ -428,6 +429,11 @@ class WhatsappSession {
             mimetype: mimetype, 
             fileName: fileName || 'document'
         };
+
+        // Add caption if provided
+        if (caption && caption.trim()) {
+            message.caption = caption;
+        }
 
         return this.sock.sendMessage(jid, message);
     }

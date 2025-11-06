@@ -187,13 +187,16 @@ router.post(
  *               number:
  *                 type: string
  *                 description: "Recipient's phone number."
+ *               caption:
+ *                 type: string
+ *                 description: "Optional text message accompanying the document."
  *               document:
  *                 type: string
  *                 format: binary
  *                 description: "The document file to send."
  *     responses:
  *       '200':
- *         description: Image sent successfully.
+ *         description: Document sent successfully.
  *       '400':
  *         description: Missing required parameters.
  *       '404':

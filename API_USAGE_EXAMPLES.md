@@ -222,16 +222,25 @@ curl -X POST http://localhost:3000/api/sessions/my-session-1/send-image \
 
 **Endpoint:** `POST /api/sessions/{sessionId}/send-document`
 
-**Description:** Send a document file (PDF, DOC, TXT, etc.).
+**Description:** Send a document file (PDF, DOC, TXT, etc.) with an optional message/caption.
 
 **Path Parameters:**
 - `sessionId` (string): The session identifier
 
 **Request Body (multipart/form-data):**
 - `number` (string): Recipient's phone number
+- `caption` (string, optional): Text message to accompany the document
 - `document` (file): Document file
 
 **cURL Example:**
+```bash
+curl -X POST http://localhost:3000/api/sessions/my-session-1/send-document \
+  -F "number=1234567890" \
+  -F "caption=Please review this important document" \
+  -F "document=@/path/to/your/document.pdf"
+```
+
+**cURL Example (without caption):**
 ```bash
 curl -X POST http://localhost:3000/api/sessions/my-session-1/send-document \
   -F "number=1234567890" \
