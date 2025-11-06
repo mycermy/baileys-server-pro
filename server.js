@@ -18,8 +18,16 @@ const __dirname = path.dirname(__filename);
 
 const banner = bannerBaileysServerPro;
 
-initializeDirectories();
-SessionManager.restoreSessions();
+try {
+    initializeDirectories();
+    console.log("✅ Directories initialized");
+    
+    SessionManager.restoreSessions();
+    console.log("✅ Sessions restored");
+} catch (error) {
+    console.error("❌ Error during initialization:", error);
+    process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,6 +49,11 @@ app.get('/api/config', (req, res) => {
     res.json({
         apiBaseUrl: process.env.API_BASE_URL || req.protocol + '://' + req.get('host')
     });
+});
+
+// Add a simple health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Listen on 0.0.0.0 inside container (required for Docker port mapping)
