@@ -18,10 +18,10 @@ services:
       - PORT=${PORT:-3000}
       - API_BASE_URL=${API_BASE_URL:-}
     volumes:
-      - baileys_sessions:/usr/src/app/sessions
-      - baileys_uploads:/usr/src/app/uploads
+      - wasap_sessions:/usr/src/app/sessions
+      - wasap_uploads:/usr/src/app/uploads
     networks:
-      - baileys-network
+      - wasap-network
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/health"]
       interval: 30s
@@ -36,11 +36,11 @@ services:
           memory: 256M
 
 volumes:
-  baileys_sessions:
+  wasap_sessions:
     driver: local
-  baileys_uploads:
+  wasap_uploads:
     driver: local
 
 networks:
-  baileys-network:
+  wasap-network:
     driver: bridge

@@ -8,13 +8,13 @@ SESSIONS_VOLUME=""
 UPLOADS_VOLUME=""
 
 # Try stack-prefixed names first (Portainer default)
-if docker volume ls | grep -q "baileys-server-pro_baileys_sessions"; then
-    SESSIONS_VOLUME="baileys-server-pro_baileys_sessions"
-    UPLOADS_VOLUME="baileys-server-pro_baileys_uploads"
+if docker volume ls | grep -q "baileys-server-pro_wasap_sessions"; then
+    SESSIONS_VOLUME="baileys-server-pro_wasap_sessions"
+    UPLOADS_VOLUME="baileys-server-pro_wasap_uploads"
 # Try simple names
-elif docker volume ls | grep -q "baileys_sessions"; then
-    SESSIONS_VOLUME="baileys_sessions"
-    UPLOADS_VOLUME="baileys_uploads"
+elif docker volume ls | grep -q "wasap_sessions"; then
+    SESSIONS_VOLUME="wasap_sessions"
+    UPLOADS_VOLUME="wasap_uploads"
 else
     echo "❌ Baileys volumes not found!"
     echo ""
