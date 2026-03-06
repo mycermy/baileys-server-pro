@@ -31,7 +31,7 @@ class WhatsappSession {
         this.sock = null;
         this.status = "starting";
         this.qr = null;
-        this.logger = pino({ level: "silent" });
+        this.logger = pino({ level: "error" }); // Changed from "silent" to see Baileys errors
         this.authPath = path.join(
             __dirname,
             "..",
@@ -330,11 +330,22 @@ class WhatsappSession {
         );
 
         if (connection === "close") {
-            const statusCode = lastDisconnect.error?.output?.statusCode;
-            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-
+            // Enhanced error logging
+            const statusCode = lastDisconnect?.error?.output?.statusCode;
+            const errorMessage = lastDisconnect?.error?.message || 'No error message';
+            const fullError = JSON.stringify(lastDisconnect?.error || {}, null, 2);
+            
             logger.warn(
-                `[${this.sessionId}] Connection closed, reason: ${statusCode}, reconnecting: ${shouldReconnect}`
+                `[${this.sessionId}] Connection closed, statusCode: ${statusCode}, error: ${errorMessage}`
+            );
+            logger.debug(
+                `[${this.sessionId}] Full disconnect error: ${fullError}`
+            );
+
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            
+            logger.warn(
+                `[${this.sessionId}] shouldReconnect: ${shouldReconnect}`
             );
 
             if (shouldReconnect) {
