@@ -46,6 +46,10 @@ class WhatsappSession {
         this.messageQueue = [];
         this.isProcessingQueue = false;
 
+        // Message history storage for getMessage/msgRetryHandler
+        this.messageHistory = new Map();
+        this.maxHistorySize = 1000;
+
         // Rate limiting properties
         this.messageCount = { hour: 0, day: 0 };
         this.lastReset = { hour: Date.now(), day: Date.now() };
@@ -128,6 +132,44 @@ class WhatsappSession {
     }
 
     /**
+     * getMessage function for handling message history retrieval.
+     * Required by Baileys for handling deviceSentMessage and retries.
+     * @param {object} key - Message key object
+     * @returns {Promise<object|undefined>} Message object or undefined
+     */
+    async getMessage(key) {
+        const id = `${key.remoteJid}_${key.id}`;
+        const msg = this.messageHistory.get(id);
+        
+        if (msg) {
+            logger.debug(`[${this.sessionId}] Retrieved message from history: ${id}`);
+            return msg;
+        }
+        
+        logger.debug(`[${this.sessionId}] Message not found in history: ${id}`);
+        return undefined;
+    }
+
+    /**
+     * Stores a message in history for potential retry.
+     * @param {object} msg - Message object to store
+     */
+    storeMessageInHistory(msg) {
+        if (!msg.key) return;
+        
+        const id = `${msg.key.remoteJid}_${msg.key.id}`;
+        this.messageHistory.set(id, msg.message);
+        
+        // Prevent memory issues by limiting history size
+        if (this.messageHistory.size > this.maxHistorySize) {
+            const firstKey = this.messageHistory.keys().next().value;
+            this.messageHistory.delete(firstKey);
+        }
+        
+        logger.debug(`[${this.sessionId}] Message stored in history: ${id}`);
+    }
+
+    /**
      * Initializes the WhatsApp socket connection and authentication state.
      * @returns {Promise<void>}
      */
@@ -144,6 +186,8 @@ class WhatsappSession {
                 printQRInTerminal: false,
                 logger: this.logger,
                 browser: ["OlimpoCRM", "Chrome", "111.0.0.0"],
+                getMessage: this.getMessage.bind(this),
+                msgRetryCounterMap: {},
             });
 
             this.sock.ev.on("messages.upsert", (m) => this.handleMessages(m));
@@ -169,9 +213,12 @@ class WhatsappSession {
      * @returns {Promise<void>}
      */
     async handleMessages(m) {
-        if (!this.webhookUrl) return;
-
         const msg = m.messages[0];
+        
+        // Store all messages in history for potential retries
+        this.storeMessageInHistory(msg);
+        
+        if (!this.webhookUrl) return;
 
         if (msg.key.fromMe || !msg.message) {
             return;
@@ -398,7 +445,14 @@ class WhatsappSession {
             caption: caption,
         };
 
-        return this.sock.sendMessage(jid, message);
+        const result = await this.sock.sendMessage(jid, message);
+        
+        // Store sent message in history
+        if (result) {
+            this.storeMessageInHistory(result);
+        }
+        
+        return result;
     }
 
     /**
@@ -435,7 +489,14 @@ class WhatsappSession {
             message.caption = caption;
         }
 
-        return this.sock.sendMessage(jid, message);
+        const result = await this.sock.sendMessage(jid, message);
+        
+        // Store sent message in history
+        if (result) {
+            this.storeMessageInHistory(result);
+        }
+        
+        return result;
     }
 
     /**
@@ -450,7 +511,14 @@ class WhatsappSession {
         await this.checkRateLimits();
 
         const jid = number.includes("@") ? number : `${number}@s.whatsapp.net`;
-        return this.sock.sendMessage(jid, { text: message });
+        const result = await this.sock.sendMessage(jid, { text: message });
+        
+        // Store sent message in history
+        if (result) {
+            this.storeMessageInHistory(result);
+        }
+        
+        return result;
     }
 
     /**
