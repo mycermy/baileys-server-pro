@@ -43,6 +43,27 @@ router.post("/start", SessionController.start);
 
 /**
  * @swagger
+ * /api/sessions/{sessionId}/qr:
+ *   get:
+ *     summary: Get the QR code for a session
+ *     tags: [Sessions]
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The session ID.
+ *     responses:
+ *       '200':
+ *         description: QR code string or null if already connected.
+ *       '404':
+ *         description: Session not found.
+ */
+router.get("/:sessionId/qr", SessionController.getQrCode);
+
+/**
+ * @swagger
  * /api/sessions/{sessionId}/status:
  *   get:
  *     summary: Get the status of a specific session
