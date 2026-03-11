@@ -31,7 +31,7 @@ class WhatsappSession {
         this.sock = null;
         this.status = "starting";
         this.qr = null;
-        this.logger = pino({ level: "error" }); // Changed from "silent" to see Baileys errors
+        this.logger = pino({ level: "silent" }); // Changed from "silent" to see Baileys errors
         this.authPath = path.join(
             __dirname,
             "..",
