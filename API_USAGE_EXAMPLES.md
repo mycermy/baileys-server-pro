@@ -413,19 +413,68 @@ curl -X GET http://localhost:3000/api/sessions/my-session-1/rate-limit-status
 - **DELIVERED**: Message delivered to recipient
 - **READ**: Message read by recipient
 
+### 9. Meta Webhook — Verify
+
+**Endpoint:** `GET /api/meta/webhook`
+
+**Description:** Used by Meta (Facebook) to verify your webhook URL when configuring the WhatsApp Cloud API integration.
+
+**Query Parameters:**
+- `hub.mode`: Must be `subscribe`
+- `hub.verify_token`: Must match `META_VERIFY_TOKEN` in your `.env`
+- `hub.challenge`: Random string returned on success
+
+---
+
+### 10. Meta Webhook — Receive Events
+
+**Endpoint:** `POST /api/meta/webhook`
+
+**Description:** Receives incoming events from the WhatsApp Cloud API (Meta). The server responds immediately with `200 OK` and processes the event asynchronously.
+
+---
+
 ## Webhook Integration
 
-If you provided a webhook URL when starting the session, you'll receive incoming messages at that URL with this payload:
+If you provided a webhook URL when starting the session, incoming messages will be forwarded to that URL with this payload:
 
+**Text message:**
 ```json
 {
   "sessionId": "my-session-1",
-  "type": "message",
-  "from": "1234567890@s.whatsapp.net",
-  "body": "Incoming message text",
-  "timestamp": 1762333497
+  "timestamp": "2026-03-11T00:21:47.000Z",
+  "message": {
+    "id": "ABC123...",
+    "from": "1234567890@s.whatsapp.net",
+    "senderName": "John Doe",
+    "type": "conversation",
+    "text": "Incoming message text",
+    "media": null,
+    "mimetype": null,
+    "fileName": null
+  }
 }
 ```
+
+**Media message (image/video/audio/document/sticker):**
+```json
+{
+  "sessionId": "my-session-1",
+  "timestamp": "2026-03-11T00:21:47.000Z",
+  "message": {
+    "id": "DEF456...",
+    "from": "1234567890@s.whatsapp.net",
+    "senderName": "Jane Doe",
+    "type": "imageMessage",
+    "text": "Optional caption",
+    "media": "<base64-encoded content>",
+    "mimetype": "image/jpeg",
+    "fileName": null
+  }
+}
+```
+
+**Supported `type` values:** `conversation`, `extendedTextMessage`, `imageMessage`, `videoMessage`, `audioMessage`, `documentMessage`, `stickerMessage`
 
 ## Error Handling
 
