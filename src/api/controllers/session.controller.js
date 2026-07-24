@@ -376,6 +376,31 @@ class SessionController {
             rateLimits: rateLimitStatus,
         });
     }
+
+    /**
+     * List all sessions (active in-memory + on-disk).
+     * @async
+     * @param {import('express').Request} req - Express request object.
+     * @param {import('express').Response} res - Express response object.
+     * @returns {Promise<void>}
+     */
+    async listSessions(req, res) {
+        try {
+            const sessions = SessionManager.listSessions();
+            res.status(200).json({
+                success: true,
+                sessions,
+                total: sessions.length,
+            });
+        } catch (error) {
+            logger.error({ error }, "Error listing sessions");
+            res.status(500).json({
+                success: false,
+                message: "Error listing sessions.",
+                error: error.message,
+            });
+        }
+    }
 }
 
 /**

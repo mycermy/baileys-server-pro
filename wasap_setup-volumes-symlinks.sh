@@ -46,8 +46,16 @@ echo "   Sessions: $SESSIONS_PATH"
 echo "   Uploads:  $UPLOADS_PATH"
 echo ""
 
-# Fix permissions
-echo "🔑 Fixing permissions..."
+# Ensure parent directories are traversable by web server users
+# (Docker resets these on boot, causing "Server Sessions (0)" after reboot)
+echo "🔑 Fixing parent directory traversal permissions..."
+sudo chmod o+rx /var/lib/docker
+sudo chmod o+rx /var/lib/docker/volumes
+sudo chmod o+rx "$SESSIONS_PATH"
+sudo chmod o+rx "$UPLOADS_PATH"
+
+# Fix permissions on volume contents
+echo "🔑 Fixing volume content permissions..."
 sudo chown -R 1000:1000 "$SESSIONS_PATH" "$UPLOADS_PATH"
 sudo chmod -R 755 "$SESSIONS_PATH" "$UPLOADS_PATH"
 

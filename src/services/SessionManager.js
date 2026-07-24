@@ -95,6 +95,59 @@ class SessionManager {
         return this.sessions.get(sessionId);
     }
 
+    /**
+     * List all sessions — both active in-memory and on-disk.
+     * @returns {Array<{sessionId: string, status: string, createdAt: string|null, hasWebhook: boolean, inMemory: boolean}>}
+     */
+    listSessions() {
+        const seen = new Set();
+        const result = [];
+
+        // 1. Active in-memory sessions
+        for (const [sessionId, session] of this.sessions) {
+            seen.add(sessionId);
+            result.push({
+                sessionId,
+                status: session.status || "unknown",
+                createdAt: null, // metadata not stored on instance
+                hasWebhook: !!session.webhookUrl,
+                inMemory: true,
+            });
+        }
+
+        // 2. On-disk session folders (may include unloaded or orphaned sessions)
+        if (fs.existsSync(SESSIONS_DIR)) {
+            const folders = fs.readdirSync(SESSIONS_DIR);
+            for (const folder of folders) {
+                if (seen.has(folder)) continue;
+
+                const metadataPath = path.join(SESSIONS_DIR, folder, "metadata.json");
+                let createdAt = null;
+                let hasWebhook = false;
+
+                if (fs.existsSync(metadataPath)) {
+                    try {
+                        const meta = JSON.parse(fs.readFileSync(metadataPath, "utf-8"));
+                        createdAt = meta.createdAt || null;
+                        hasWebhook = !!meta.webhookUrl;
+                    } catch {
+                        // ignore malformed metadata
+                    }
+                }
+
+                result.push({
+                    sessionId: folder,
+                    status: "stopped",
+                    createdAt,
+                    hasWebhook,
+                    inMemory: false,
+                });
+            }
+        }
+
+        return result;
+    }
+
     async endSession(sessionId) {
         const session = this.sessions.get(sessionId);
         if (session) {

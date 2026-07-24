@@ -14,6 +14,43 @@ const router = Router();
 
 /**
  * @swagger
+ * /api/sessions:
+ *   get:
+ *     summary: List all WhatsApp sessions (active + on-disk)
+ *     tags: [Sessions]
+ *     responses:
+ *       '200':
+ *         description: List of sessions retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 sessions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       sessionId:
+ *                         type: string
+ *                       status:
+ *                         type: string
+ *                       createdAt:
+ *                         type: string
+ *                         nullable: true
+ *                       hasWebhook:
+ *                         type: boolean
+ *                       inMemory:
+ *                         type: boolean
+ *                 total:
+ *                   type: integer
+ */
+router.get("/", SessionController.listSessions);
+
+/**
+ * @swagger
  * /api/sessions/start:
  *   post:
  *     summary: Start a new WhatsApp session

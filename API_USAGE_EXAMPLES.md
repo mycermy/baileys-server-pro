@@ -18,6 +18,41 @@ No authentication required for basic usage. Sessions are managed by session IDs.
 
 ## API Endpoints
 
+### 0. List All Sessions
+
+**Endpoint:** `GET /api/sessions`
+
+**Description:** Retrieve a list of all WhatsApp sessions — both active (in-memory) and inactive (on-disk). Useful for checking which sessions exist without scanning the filesystem.
+
+**cURL Example:**
+```bash
+curl -X GET http://localhost:3000/api/sessions
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "sessions": [
+    {
+      "sessionId": "TheSession",
+      "status": "open",
+      "createdAt": "2026-07-24T12:00:00.000Z",
+      "hasWebhook": false,
+      "inMemory": true
+    }
+  ],
+  "total": 1
+}
+```
+
+**Notes:**
+- `status` is `"open"`, `"connecting"`, `"starting"`, `"stopped"`, etc.
+- `inMemory: true` means the session is currently loaded in the server.
+- `inMemory: false` means the session folder exists but is not active (e.g., after a restart).
+
+---
+
 ### 1. Start a New WhatsApp Session
 
 **Endpoint:** `POST /api/sessions/start`
