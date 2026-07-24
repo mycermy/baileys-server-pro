@@ -121,7 +121,13 @@ class SessionManager {
             for (const folder of folders) {
                 if (seen.has(folder)) continue;
 
-                const metadataPath = path.join(SESSIONS_DIR, folder, "metadata.json");
+                // Skip hidden/system files like .DS_Store
+                if (folder.startsWith(".")) continue;
+
+                const folderPath = path.join(SESSIONS_DIR, folder);
+                if (!fs.statSync(folderPath).isDirectory()) continue;
+
+                const metadataPath = path.join(folderPath, "metadata.json");
                 let createdAt = null;
                 let hasWebhook = false;
 

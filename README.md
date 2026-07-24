@@ -79,7 +79,7 @@ This repository has **two** Docker Compose files. They are not interchangeable:
 **Do NOT redeploy your local MacBook stack through Portainer** unless you also migrate the session data into the named volume. If you do, Portainer will create a fresh empty volume, the existing `creds.json` will be missing, and your session will stay stuck at `connecting` with errors like:
 
 ```text
-[ZRInvois] Message for 60107750600 queued. Reason: Connection not available.
+[TheSession] Message for 10123456789 queued. Reason: Connection not available.
 ```
 
 ### Quick Summary:
