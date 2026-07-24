@@ -67,6 +67,21 @@ Your server will be running on `http://localhost:3000`.
 
 **📘 Quick Start**: See **[PORTAINER_QUICK_START.md](PORTAINER_QUICK_START.md)** for complete 3-step guide!
 
+### ⚠️ VERY IMPORTANT: Which compose file to use
+
+This repository has **two** Docker Compose files. They are not interchangeable:
+
+| File | Use for | Mount strategy | Why |
+|------|---------|----------------|-----|
+| **`docker-compose.yml`** | Local development on your MacBook | **Bind mount** (`./sessions:/usr/src/app/sessions`) | Keeps session files (`creds.json`) in the project folder so they survive container recreation. |
+| **`portainer-stack.yml`** | Production deployment via Portainer (VPS or local) | **Named volumes** (`wasap_sessions:/usr/src/app/sessions`) | Works reliably in Portainer with automatic volume management. |
+
+**Do NOT redeploy your local MacBook stack through Portainer** unless you also migrate the session data into the named volume. If you do, Portainer will create a fresh empty volume, the existing `creds.json` will be missing, and your session will stay stuck at `connecting` with errors like:
+
+```text
+[ZRInvois] Message for 60107750600 queued. Reason: Connection not available.
+```
+
 ### Quick Summary:
 
 1. **Deploy Stack** in Portainer using Repository method
@@ -94,8 +109,16 @@ To deploy this server to your Portainer instance:
 # Build and deploy
 ./deploy.sh your-registry.com v1.0.0
 
-# Or build locally
+# Or build locally (uses docker-compose.yml with bind mounts)
 docker build -t baileys-server-pro:latest .
+docker-compose up -d
+```
+
+### Option 3: Local development (recommended for MacBook)
+```bash
+# Always use docker-compose.yml for local development, never portainer-stack.yml
+cd /Users/zrm/Documents/GitHub/baileys-server-pro
+docker-compose down
 docker-compose up -d
 ```
 
@@ -225,3 +248,12 @@ To receive messages, provide a URL in the `start` endpoint. You will receive a `
 ## 💾 Data Persistence
 
 The server saves credentials in the `/usr/src/app/sessions` folder inside the container. It is **crucial** to mount a volume at this path (`-v ./sessions:/usr/src/app/sessions`) to ensure your sessions are not lost.
+
+### Session stuck at `connecting` after redeploy?
+
+1. Check that the correct compose file was used (see [Which compose file to use](#which-compose-file-to-use) above).
+2. Verify `creds.json` exists inside the container:
+   ```bash
+   docker exec baileys-server-pro ls -la /usr/src/app/sessions/ZRInvois/
+   ```
+3. If `creds.json` is missing, the container is using an empty volume. Restore it from a backup or re-scan the QR code.

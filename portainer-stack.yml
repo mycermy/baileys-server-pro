@@ -17,6 +17,9 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-3000}
       - API_BASE_URL=${API_BASE_URL:-}
+    # IMPORTANT — see README.md "Deployment files" section.
+    # This stack uses named volumes intentionally for production (VPS).
+    # Do NOT change to bind mounts here without also updating the VPS backup/restore strategy.
     volumes:
       - wasap_sessions:/usr/src/app/sessions
       - wasap_uploads:/usr/src/app/uploads
