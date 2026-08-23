@@ -54,9 +54,9 @@ class WhatsappSession {
         this.messageCount = { hour: 0, day: 0 };
         this.lastReset = { hour: Date.now(), day: Date.now() };
         this.rateLimits = {
-            perHour: 100,
-            perDay: 1000,
-            delayBetweenMessages: 2000 // 2 seconds minimum delay
+            perHour: parseInt(process.env.RATE_LIMIT_PER_HOUR || '100', 10),
+            perDay: parseInt(process.env.RATE_LIMIT_PER_DAY || '1000', 10),
+            delayBetweenMessages: parseInt(process.env.RATE_LIMIT_DELAY_MS || '2000', 10)
         };
     }
 
