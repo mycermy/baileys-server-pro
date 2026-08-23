@@ -17,6 +17,9 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-3000}
       - API_BASE_URL=${API_BASE_URL:-}
+      - RATE_LIMIT_PER_HOUR=${RATE_LIMIT_PER_HOUR:-100}
+      - RATE_LIMIT_PER_DAY=${RATE_LIMIT_PER_DAY:-1000}
+      - RATE_LIMIT_DELAY_MS=${RATE_LIMIT_DELAY_MS:-2000}
     # IMPORTANT — see README.md "Deployment files" section.
     # This stack uses named volumes intentionally for production (VPS).
     # Do NOT change to bind mounts here without also updating the VPS backup/restore strategy.
