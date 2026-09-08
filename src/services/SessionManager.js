@@ -22,6 +22,40 @@ class SessionManager {
                 `The session ${sessionId} already exists with status: ${existingSession.status}`
             );
 
+            // Update the webhook URL on the existing session so a re-start
+            // (e.g. after the tenant configured a webhook) takes effect even
+            // when the session is already in memory.
+            if (webhookUrl !== undefined && existingSession.webhookUrl !== webhookUrl) {
+                existingSession.webhookUrl = webhookUrl;
+                logger.info(
+                    `[${sessionId}] Updated webhook URL to: ${webhookUrl || "none"}`
+                );
+
+                // Persist the new webhook URL to metadata.json so it survives a
+                // server restart (restoreSessions reads it back).
+                try {
+                    const metadataPath = path.join(
+                        SESSIONS_DIR,
+                        sessionId,
+                        "metadata.json"
+                    );
+                    const metadata = {
+                        sessionId: sessionId,
+                        webhookUrl: webhookUrl || null,
+                        createdAt: new Date().toISOString(),
+                    };
+                    fs.writeFileSync(
+                        metadataPath,
+                        JSON.stringify(metadata, null, 2)
+                    );
+                } catch (error) {
+                    logger.error(
+                        { error },
+                        `[${sessionId}] Could not persist webhook URL to metadata.json`
+                    );
+                }
+            }
+
             // Si la sesión está en estado fallido, la reinicia.
             if (existingSession.status === "max_retries_reached") {
                 logger.info(
