@@ -232,12 +232,16 @@ class WhatsappSession {
         const messageType = Object.keys(msg.message).find(key => key !== 'messageContextInfo');
 
         // Construye el payload base del webhook
+        // remoteJidAlt: when WhatsApp addresses the chat with a LID (@lid),
+        // Baileys pairs the real phone number (PN JID) here. Consumers use it
+        // to key the conversation by phone instead of the opaque LID.
         const payload = {
             sessionId: this.sessionId,
             timestamp: new Date().toISOString(),
             message: {
                 id: msg.key.id,
                 from: msg.key.remoteJid,
+                remoteJidAlt: msg.key.remoteJidAlt || null,
                 senderName: msg.pushName,
                 type: messageType,
                 text: null,
