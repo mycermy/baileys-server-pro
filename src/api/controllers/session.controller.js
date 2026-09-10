@@ -186,6 +186,8 @@ class SessionController {
 
     /**
      * Updates the WhatsApp Status (story) for a session.
+     * Supports text statuses (JSON) and media statuses (multipart with
+     * an image/video file + optional caption).
      * @async
      * @param {import('express').Request} req - Express request object. Requires sessionId in params and text in body.
      * @param {import('express').Response} res - Express response object.
@@ -194,17 +196,19 @@ class SessionController {
     async updateStatus(req, res) {
         const { sessionId } = req.params;
         const { text, backgroundColor } = req.body;
+        const file = req.file; // multer — present for media statuses
 
-        if (!text) {
+        if (!text && !file) {
             return res.status(400).json({
                 success: false,
-                message: "The text field is required.",
+                message: "The text field (or a media file) is required.",
             });
         }
 
         const session = SessionManager.getSession(sessionId);
 
         if (!session) {
+            if (file) await fs.unlink(file.path);
             return res
                 .status(404)
                 .json({ success: false, message: "Session not found." });
@@ -212,15 +216,19 @@ class SessionController {
 
         try {
             const result = await session.sendStatus(
-                text,
-                backgroundColor || "#128C7E"
+                text || "",
+                backgroundColor || "#128C7E",
+                file ? file.path : null,
+                file ? (file.mimetype.startsWith("video") ? "video" : "image") : "image"
             );
+            if (file) await fs.unlink(file.path); // clean up uploaded temp file
             res.status(200).json({
                 success: true,
                 message: "Status updated successfully.",
                 details: result,
             });
         } catch (error) {
+            if (file) await fs.unlink(file.path);
             logger.error(
                 { error },
                 `Error al actualizar estado desde ${sessionId}`

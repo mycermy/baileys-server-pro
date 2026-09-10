@@ -473,12 +473,14 @@ class WhatsappSession {
     /**
      * Sends a WhatsApp Status (story) update to all contacts.
      * Uses the status@broadcast JID — Baileys v7 supports it natively.
-     * @param {string} text - The status text.
-     * @param {string} [backgroundColor='#128C7E'] - Background color (hex).
+     * @param {string} text - The status text (caption for media statuses).
+     * @param {string} [backgroundColor='#128C7E'] - Background color (hex) for text statuses.
+     * @param {string|null} [mediaPath=null] - Optional local path to an image/video file.
+     * @param {string} [mediaType='image'] - 'image' or 'video'.
      * @returns {Promise<object>} The Baileys message object.
      * @throws {Error} If the session is not 'open'.
      */
-    async sendStatus(text, backgroundColor = "#128C7E") {
+    async sendStatus(text, backgroundColor = "#128C7E", mediaPath = null, mediaType = "image") {
         logger.info(
             `[${this.sessionId}] Request to update WhatsApp status. Status: "${this.status}"`
         );
@@ -491,10 +493,20 @@ class WhatsappSession {
         // Check rate limits before sending
         await this.checkRateLimits();
 
-        const message = {
-            text: text,
-            backgroundColor: backgroundColor,
-        };
+        let message;
+        if (mediaPath) {
+            // Media status (image/video) — caption is the text
+            message = {
+                [mediaType]: { url: mediaPath },
+                caption: text || "",
+            };
+        } else {
+            // Text status with background color
+            message = {
+                text: text,
+                backgroundColor: backgroundColor,
+            };
+        }
 
         const result = await this.sock.sendMessage("status@broadcast", message);
 

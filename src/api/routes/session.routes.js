@@ -210,7 +210,7 @@ router.post("/:sessionId/send-message", SessionController.sendMessage);
  *       '503':
  *         description: The session is not open.
  */
-router.post("/:sessionId/update-status", SessionController.updateStatus);
+router.post("/:sessionId/update-status", upload.single("media"), SessionController.updateStatus);
 
 /**
  * @swagger
