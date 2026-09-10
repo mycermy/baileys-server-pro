@@ -569,13 +569,29 @@ class WhatsappSession {
         // appears for contacts.
         // Priority: caller-provided list (from the app's database) first,
         // fallback to the session-tracked contacts.
-        // NOTE: do NOT pre-resolve PN→LID here — Baileys getUSyncDevices()
-        // already resolves PN→LID internally (withLIDProtocol + storeLIDPNMappings),
-        // and a manual per-JID LID USync before sendMessage doubles the query
-        // time and times out.
         let jidList = Array.isArray(externalJidList) ? externalJidList : [];
         if (jidList.length === 0) {
             jidList = [...this.contacts];
+        }
+
+        // WhatsApp addresses contacts by LID (@lid), not phone number. The
+        // statusJidList must contain LIDs so the sender key reaches the
+        // contact's actual device. Resolve PN→LID in ONE batch USync query
+        // (getLIDsForPNs) — a per-JID getLIDForPN loop times out.
+        const lidMapping = this.sock?.signalRepository?.lidMapping;
+        if (lidMapping && jidList.length > 0) {
+            try {
+                const pairs = await lidMapping.getLIDsForPNs(jidList);
+                if (pairs && pairs.length > 0) {
+                    const lidByPn = {};
+                    for (const pair of pairs) {
+                        lidByPn[pair.pn] = pair.lid;
+                    }
+                    jidList = jidList.map((jid) => lidByPn[jid] || jid);
+                }
+            } catch (e) {
+                logger.warn({ e }, `[${this.sessionId}] LID resolution failed, using PN list`);
+            }
         }
 
         sendOptions.broadcast = true;
