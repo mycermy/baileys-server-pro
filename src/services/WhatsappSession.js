@@ -50,6 +50,14 @@ class WhatsappSession {
         this.messageHistory = new Map();
         this.maxHistorySize = 1000;
 
+        // Known contacts (JIDs) — populated from messaging-history.set and
+        // inbound/outbound messages. Used as statusJidList when sending a
+        // WhatsApp Status: without it Baileys sends status@broadcast with an
+        // EMPTY participant list (groupData is null for status), so WhatsApp
+        // has no devices to distribute the status to and contacts never see it.
+        this.contacts = new Set();
+        this.maxContacts = 5000;
+
         // Rate limiting properties
         this.messageCount = { hour: 0, day: 0 };
         this.lastReset = { hour: Date.now(), day: Date.now() };
@@ -210,6 +218,19 @@ class WhatsappSession {
                 }
             );
 
+            // Populate the contact list from the initial history sync. This
+            // feeds statusJidList for WhatsApp Status distribution.
+            this.sock.ev.on("messaging-history.set", ({ chats = [] }) => {
+                for (const chat of chats) {
+                    if (chat.id && !chat.id.endsWith('@g.us') && !chat.id.endsWith('@newsletter')) {
+                        this.trackContact(chat.id);
+                    }
+                }
+                logger.info(
+                    `[${this.sessionId}] Contact list updated: ${this.contacts.size} known contacts`
+                );
+            });
+
             this.sock.ev.on(
                 "connection.update",
                 this.handleConnectionUpdate.bind(this)
@@ -232,10 +253,17 @@ class WhatsappSession {
      */
     async handleMessages(m) {
         const msg = m.messages[0];
-        
+
         // Store all messages in history for potential retries
         this.storeMessageInHistory(msg);
-        
+
+        // Track the conversation counterpart as a known contact (skips groups,
+        // newsletters, broadcast/status JIDs and our own messages) so future
+        // status updates can distribute the sender key to them.
+        if (msg.key?.remoteJid) {
+            this.trackContact(msg.key.remoteJid);
+        }
+
         if (!this.webhookUrl) return;
 
         if (msg.key.fromMe || !msg.message) {
@@ -500,7 +528,7 @@ class WhatsappSession {
      */
     async sendStatus(text, backgroundColor = "#128C7E", mediaPath = null, mediaType = "image") {
         logger.info(
-            `[${this.sessionId}] Request to update WhatsApp status. Status: "${this.status}"`
+            `[${this.sessionId}] Request to update WhatsApp status. Status: "${this.status}". Known contacts: ${this.contacts.size}`
         );
         if (this.status !== "open") {
             throw new Error(
@@ -533,6 +561,16 @@ class WhatsappSession {
             };
         }
 
+        // statusJidList: the contact devices that receive the status sender
+        // key. For status@broadcast Baileys has no participant list (groupData
+        // is null), so without this option the sender key distribution goes
+        // to (almost) nobody — contacts cannot decrypt the status and it
+        // never appears for them, even though the server accepts the send.
+        const jidList = [...this.contacts];
+        if (jidList.length > 0) {
+            sendOptions.statusJidList = jidList;
+        }
+
         const result = await this.sock.sendMessage(
             "status@broadcast",
             message,
@@ -545,6 +583,35 @@ class WhatsappSession {
         }
 
         return result;
+    }
+
+    /**
+     * Track a JID as a known contact for status distribution. Skips groups,
+     * newsletters, broadcast/status JIDs and our own JID.
+     * @param {string} jid - The JID to track.
+     * @returns {void}
+     */
+    trackContact(jid) {
+        if (!jid || typeof jid !== "string") {
+            return;
+        }
+        if (
+            jid.endsWith("@g.us") ||
+            jid.endsWith("@newsletter") ||
+            jid === "status@broadcast"
+        ) {
+            return;
+        }
+        // Strip the device suffix (e.g. :20) — status distribution targets the
+        // bare user JID.
+        const bare = jid.split(":")[0];
+        if (bare && !this.contacts.has(bare)) {
+            this.contacts.add(bare);
+            if (this.contacts.size > this.maxContacts) {
+                // Evict the oldest entry (first inserted).
+                this.contacts.delete(this.contacts.values().next().value);
+            }
+        }
     }
 
     /**
