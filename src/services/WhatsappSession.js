@@ -561,17 +561,19 @@ class WhatsappSession {
             };
         }
 
-        // statusJidList: the contact devices that receive the status sender
-        // key. For status@broadcast Baileys has no participant list (groupData
-        // is null), so without this option the sender key distribution goes
-        // to (almost) nobody — contacts cannot decrypt the status and it
-        // never appears for them, even though the server accepts the send.
+        // statusJidList + broadcast: per Baileys docs (baileys.wiki/features/
+        // broadcasts-stories) BOTH are required when publishing to
+        // status@broadcast — statusJidList determines which contact devices
+        // receive the status sender key, and broadcast: true enables broadcast
+        // mode. Without them the status is accepted by the server but never
+        // appears for contacts.
         // Priority: caller-provided list (from the app's database) first,
         // fallback to the session-tracked contacts.
         let jidList = Array.isArray(externalJidList) ? externalJidList : [];
         if (jidList.length === 0) {
             jidList = [...this.contacts];
         }
+        sendOptions.broadcast = true;
         if (jidList.length > 0) {
             sendOptions.statusJidList = jidList;
         }
