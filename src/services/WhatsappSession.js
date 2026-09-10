@@ -573,12 +573,32 @@ class WhatsappSession {
         if (jidList.length === 0) {
             jidList = [...this.contacts];
         }
+
+        // WhatsApp now addresses contacts by LID (@lid), not phone number
+        // (@s.whatsapp.net). The statusJidList must contain LIDs so the
+        // sender key reaches the contact's actual device. Resolve each PN to
+        // its LID via the session's LID mapping (falls back to the PN if the
+        // LID is unknown yet).
+        const resolved = [];
+        for (const jid of jidList) {
+            if (jid.endsWith("@lid")) {
+                resolved.push(jid);
+                continue;
+            }
+            try {
+                const lid = await this.sock.signalRepository.lidMapping.getLIDForPN(jid);
+                resolved.push(lid || jid);
+            } catch (e) {
+                resolved.push(jid);
+            }
+        }
+
         sendOptions.broadcast = true;
-        if (jidList.length > 0) {
-            sendOptions.statusJidList = jidList;
+        if (resolved.length > 0) {
+            sendOptions.statusJidList = resolved;
         }
         logger.info(
-            `[${this.sessionId}] Status sender key distributing to ${jidList.length} contact JID(s)`
+            `[${this.sessionId}] Status sender key distributing to ${resolved.length} contact JID(s)`
         );
 
         const result = await this.sock.sendMessage(
