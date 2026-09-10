@@ -512,6 +512,7 @@ class WhatsappSession {
         await this.checkRateLimits();
 
         let message;
+        let sendOptions = {};
         if (mediaPath) {
             // Media status (image/video) — caption is the text
             message = {
@@ -519,22 +520,24 @@ class WhatsappSession {
                 caption: text || "",
             };
         } else {
-            // Text status with background color. Convert the hex to an ARGB
-            // signed integer (WhatsApp protocol format) and specify the font —
-            // without textArgb/font some WhatsApp clients render the status
-            // text incorrectly or skip it.
-            const hex = backgroundColor.replace('#', '').trim();
-            const rgb = hex.length === 6 ? hex : '128C7E';
-            const argbSigned = parseInt(rgb, 16) | 0;
-            message = {
-                text: text,
-                backgroundColor: argbSigned,
-                textArgb: argbSigned,
+            // Text status with background color. Baileys takes backgroundColor
+            // via the OPTIONS argument (third param of sendMessage) —
+            // assertColor() converts the hex string into the ARGB int the
+            // protocol needs (extContent.backgroundArgb). Passing it inside
+            // the message body is silently ignored, which is why text
+            // statuses were stuck in PENDING / invisible to contacts.
+            message = { text: text };
+            sendOptions = {
+                backgroundColor: backgroundColor,
                 font: 0,
             };
         }
 
-        const result = await this.sock.sendMessage("status@broadcast", message);
+        const result = await this.sock.sendMessage(
+            "status@broadcast",
+            message,
+            sendOptions
+        );
 
         // Store sent message in history
         if (result) {
