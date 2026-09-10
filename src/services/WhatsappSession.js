@@ -192,6 +192,24 @@ class WhatsappSession {
 
             this.sock.ev.on("messages.upsert", (m) => this.handleMessages(m));
 
+            // Track delivery status of our own outgoing messages (PENDING →
+            // SERVER_ACK → DELIVERY_ACK). A status stuck in PENDING for a long
+            // time means WhatsApp's server has not confirmed the send.
+            this.sock.ev.on(
+                "messages.update",
+                (updates) => {
+                    for (const { key, update } of updates) {
+                        const newStatus = update.status;
+                        if (newStatus === undefined && !update.error) {
+                            continue;
+                        }
+                        logger.info(
+                            `[${this.sessionId}] Message ${key.id} (${key.remoteJid}) status -> ${newStatus}${update.error ? ` error=${JSON.stringify(update.error)}` : ""}`
+                        );
+                    }
+                }
+            );
+
             this.sock.ev.on(
                 "connection.update",
                 this.handleConnectionUpdate.bind(this)
