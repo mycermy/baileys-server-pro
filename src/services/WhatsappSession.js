@@ -526,7 +526,7 @@ class WhatsappSession {
      * @returns {Promise<object>} The Baileys message object.
      * @throws {Error} If the session is not 'open'.
      */
-    async sendStatus(text, backgroundColor = "#128C7E", mediaPath = null, mediaType = "image") {
+    async sendStatus(text, backgroundColor = "#128C7E", mediaPath = null, mediaType = "image", externalJidList = null) {
         logger.info(
             `[${this.sessionId}] Request to update WhatsApp status. Status: "${this.status}". Known contacts: ${this.contacts.size}`
         );
@@ -566,10 +566,18 @@ class WhatsappSession {
         // is null), so without this option the sender key distribution goes
         // to (almost) nobody — contacts cannot decrypt the status and it
         // never appears for them, even though the server accepts the send.
-        const jidList = [...this.contacts];
+        // Priority: caller-provided list (from the app's database) first,
+        // fallback to the session-tracked contacts.
+        let jidList = Array.isArray(externalJidList) ? externalJidList : [];
+        if (jidList.length === 0) {
+            jidList = [...this.contacts];
+        }
         if (jidList.length > 0) {
             sendOptions.statusJidList = jidList;
         }
+        logger.info(
+            `[${this.sessionId}] Status sender key distributing to ${jidList.length} contact JID(s)`
+        );
 
         const result = await this.sock.sendMessage(
             "status@broadcast",

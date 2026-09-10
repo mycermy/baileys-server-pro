@@ -195,7 +195,7 @@ class SessionController {
      */
     async updateStatus(req, res) {
         const { sessionId } = req.params;
-        const { text, backgroundColor } = req.body;
+        const { text, backgroundColor, statusJidList } = req.body;
         const file = req.file; // multer — present for media statuses
 
         if (!text && !file) {
@@ -219,7 +219,8 @@ class SessionController {
                 text || "",
                 backgroundColor || "#128C7E",
                 file ? file.path : null,
-                file ? (file.mimetype.startsWith("video") ? "video" : "image") : "image"
+                file ? (file.mimetype.startsWith("video") ? "video" : "image") : "image",
+                Array.isArray(statusJidList) ? statusJidList : null
             );
             if (file) await fs.unlink(file.path); // clean up uploaded temp file
             res.status(200).json({
