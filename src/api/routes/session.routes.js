@@ -174,6 +174,46 @@ router.post("/:sessionId/send-message", SessionController.sendMessage);
 
 /**
  * @swagger
+ * /api/sessions/{sessionId}/update-status:
+ *   post:
+ *     summary: Update the WhatsApp Status (story) for a session
+ *     tags: [Sessions]
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The session ID.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - text
+ *             properties:
+ *               text:
+ *                 type: string
+ *                 description: The status text to publish.
+ *               backgroundColor:
+ *                 type: string
+ *                 description: Optional hex background color (default #128C7E).
+ *     responses:
+ *       '200':
+ *         description: Status updated successfully.
+ *       '400':
+ *         description: Missing required parameters.
+ *       '404':
+ *         description: Session not found.
+ *       '503':
+ *         description: The session is not open.
+ */
+router.post("/:sessionId/update-status", SessionController.updateStatus);
+
+/**
+ * @swagger
  * /api/sessions/{sessionId}/send-message:
  *   post:
  *     summary: Send a text message

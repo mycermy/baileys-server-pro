@@ -185,6 +185,64 @@ class SessionController {
     }
 
     /**
+     * Updates the WhatsApp Status (story) for a session.
+     * @async
+     * @param {import('express').Request} req - Express request object. Requires sessionId in params and text in body.
+     * @param {import('express').Response} res - Express response object.
+     * @returns {Promise<void>}
+     */
+    async updateStatus(req, res) {
+        const { sessionId } = req.params;
+        const { text, backgroundColor } = req.body;
+
+        if (!text) {
+            return res.status(400).json({
+                success: false,
+                message: "The text field is required.",
+            });
+        }
+
+        const session = SessionManager.getSession(sessionId);
+
+        if (!session) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Session not found." });
+        }
+
+        try {
+            const result = await session.sendStatus(
+                text,
+                backgroundColor || "#128C7E"
+            );
+            res.status(200).json({
+                success: true,
+                message: "Status updated successfully.",
+                details: result,
+            });
+        } catch (error) {
+            logger.error(
+                { error },
+                `Error al actualizar estado desde ${sessionId}`
+            );
+
+            if (error.message.includes("rate limit")) {
+                return res.status(429).json({
+                    success: false,
+                    message: "Rate limit exceeded.",
+                    error: error.message,
+                });
+            }
+
+            res.status(500).json({
+                success: false,
+                message: "Error updating the status.",
+                error: error.message,
+            });
+        }
+    }
+
+    /**
      * Sends an image message using a WhatsApp session.
      * Requires the session to be open. Handles file upload via Multer.
      * @async

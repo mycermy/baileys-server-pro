@@ -471,6 +471,42 @@ class WhatsappSession {
     }
 
     /**
+     * Sends a WhatsApp Status (story) update to all contacts.
+     * Uses the status@broadcast JID — Baileys v7 supports it natively.
+     * @param {string} text - The status text.
+     * @param {string} [backgroundColor='#128C7E'] - Background color (hex).
+     * @returns {Promise<object>} The Baileys message object.
+     * @throws {Error} If the session is not 'open'.
+     */
+    async sendStatus(text, backgroundColor = "#128C7E") {
+        logger.info(
+            `[${this.sessionId}] Request to update WhatsApp status. Status: "${this.status}"`
+        );
+        if (this.status !== "open") {
+            throw new Error(
+                "The WhatsApp session is not open for updating status."
+            );
+        }
+
+        // Check rate limits before sending
+        await this.checkRateLimits();
+
+        const message = {
+            text: text,
+            backgroundColor: backgroundColor,
+        };
+
+        const result = await this.sock.sendMessage("status@broadcast", message);
+
+        // Store sent message in history
+        if (result) {
+            this.storeMessageInHistory(result);
+        }
+
+        return result;
+    }
+
+    /**
      * Sends a document message. If not connected, throws an error.
      * @param {string} recipient - Recipient's phone number (with country code) or JID.
      * @param {string} filePath - The local path to the document file.
