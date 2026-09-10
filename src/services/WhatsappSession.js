@@ -574,41 +574,17 @@ class WhatsappSession {
             jidList = [...this.contacts];
         }
 
-        // WhatsApp addresses contacts by LID (@lid), not phone number. The
-        // statusJidList must contain LIDs so the sender key reaches the
-        // contact's actual device. Resolve PN→LID in ONE batch USync query
-        // (getLIDsForPNs) — a per-JID getLIDForPN loop times out.
-        const lidMapping = this.sock?.signalRepository?.lidMapping;
-        let lidResolvedCount = 0;
-        if (lidMapping && jidList.length > 0) {
-            try {
-                const pairs = await lidMapping.getLIDsForPNs(jidList);
-                if (pairs && pairs.length > 0) {
-                    const lidByPn = {};
-                    for (const pair of pairs) {
-                        lidByPn[pair.pn] = pair.lid;
-                    }
-                    jidList = jidList.map((jid) => {
-                        const lid = lidByPn[jid];
-                        if (lid) {
-                            lidResolvedCount++;
-                            return lid;
-                        }
-                        return jid;
-                    });
-                }
-            } catch (e) {
-                logger.warn({ e }, `[${this.sessionId}] LID resolution failed, using PN list`);
-            }
-        }
-
+        // statusJidList accepts PN JIDs (@s.whatsapp.net). Baileys resolves
+        // PN→LID internally via getUSyncDevices (withLIDProtocol) when the
+        // message is relayed — a manual pre-resolution here only doubles the
+        // USync work and times out on large lists. Pass the PN list directly.
         sendOptions.broadcast = true;
         if (jidList.length > 0) {
             sendOptions.statusJidList = jidList;
         }
         logger.info(
             `[${this.sessionId}] Status sender key distributing to ${jidList.length} contact JID(s) ` +
-                `(LID resolved: ${lidResolvedCount}/${jidList.length}; sample: ${jidList.slice(0, 3).join(", ")})`
+                `(sample: ${jidList.slice(0, 3).join(", ")})`
         );
 
         const result = await this.sock.sendMessage(
