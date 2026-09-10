@@ -579,6 +579,7 @@ class WhatsappSession {
         // contact's actual device. Resolve PN→LID in ONE batch USync query
         // (getLIDsForPNs) — a per-JID getLIDForPN loop times out.
         const lidMapping = this.sock?.signalRepository?.lidMapping;
+        let lidResolvedCount = 0;
         if (lidMapping && jidList.length > 0) {
             try {
                 const pairs = await lidMapping.getLIDsForPNs(jidList);
@@ -587,7 +588,14 @@ class WhatsappSession {
                     for (const pair of pairs) {
                         lidByPn[pair.pn] = pair.lid;
                     }
-                    jidList = jidList.map((jid) => lidByPn[jid] || jid);
+                    jidList = jidList.map((jid) => {
+                        const lid = lidByPn[jid];
+                        if (lid) {
+                            lidResolvedCount++;
+                            return lid;
+                        }
+                        return jid;
+                    });
                 }
             } catch (e) {
                 logger.warn({ e }, `[${this.sessionId}] LID resolution failed, using PN list`);
@@ -599,7 +607,8 @@ class WhatsappSession {
             sendOptions.statusJidList = jidList;
         }
         logger.info(
-            `[${this.sessionId}] Status sender key distributing to ${jidList.length} contact JID(s)`
+            `[${this.sessionId}] Status sender key distributing to ${jidList.length} contact JID(s) ` +
+                `(LID resolved: ${lidResolvedCount}/${jidList.length}; sample: ${jidList.slice(0, 3).join(", ")})`
         );
 
         const result = await this.sock.sendMessage(
