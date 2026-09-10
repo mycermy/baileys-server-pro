@@ -501,10 +501,18 @@ class WhatsappSession {
                 caption: text || "",
             };
         } else {
-            // Text status with background color
+            // Text status with background color. Convert the hex to an ARGB
+            // signed integer (WhatsApp protocol format) and specify the font —
+            // without textArgb/font some WhatsApp clients render the status
+            // text incorrectly or skip it.
+            const hex = backgroundColor.replace('#', '').trim();
+            const rgb = hex.length === 6 ? hex : '128C7E';
+            const argbSigned = parseInt(rgb, 16) | 0;
             message = {
                 text: text,
-                backgroundColor: backgroundColor,
+                backgroundColor: argbSigned,
+                textArgb: argbSigned,
+                font: 0,
             };
         }
 
