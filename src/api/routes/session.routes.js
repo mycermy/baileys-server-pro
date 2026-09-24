@@ -384,4 +384,66 @@ router.delete("/:sessionId/end", SessionController.end);
  */
 router.get("/:sessionId/rate-limit-status", SessionController.getRateLimitStatus);
 
+/**
+ * @swagger
+ * /api/sessions/{sessionId}/resolve-lid/{lid}:
+ *   get:
+ *     summary: Resolve a WhatsApp LID to a phone number
+ *     description: >
+ *       Looks up the phone number that corresponds to a given LID (opaque 14-16 digit
+ *       WhatsApp internal identifier). Tries the in-memory Baileys signal repository
+ *       first, then falls back to the on-disk mapping files. Returns 200 even when the
+ *       LID is unknown — check the `resolved` field.
+ *     tags: [Sessions]
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The session ID.
+ *       - in: path
+ *         name: lid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The numeric LID (at least 10 digits).
+ *         example: "85895168413780"
+ *     responses:
+ *       '200':
+ *         description: LID resolution result. `resolved` is false when no mapping was found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 sessionId:
+ *                   type: string
+ *                 lid:
+ *                   type: string
+ *                   description: Normalised LID (digits only).
+ *                 phoneNumber:
+ *                   type: string
+ *                   nullable: true
+ *                   description: Resolved phone number (digits only), or null if not found.
+ *                   example: "60107750600"
+ *                 resolved:
+ *                   type: boolean
+ *                   description: True only when a phone number was found.
+ *                 source:
+ *                   type: string
+ *                   nullable: true
+ *                   enum:
+ *                     - signalRepository
+ *                     - file
+ *                   description: Which lookup source produced the result, or null if unresolved.
+ *       '400':
+ *         description: Invalid LID — must be numeric and at least 10 digits.
+ *       '404':
+ *         description: Session not found.
+ */
+router.get("/:sessionId/resolve-lid/:lid", SessionController.resolveLid);
+
 export default router;

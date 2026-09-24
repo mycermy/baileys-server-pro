@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import SessionManager from "../../services/SessionManager.js";
 import logger from "../../utils/logger.js";
+import { resolvePN } from "../../services/LidResolver.js";
 
 /**
  * SessionController
@@ -464,6 +465,52 @@ class SessionController {
             res.status(500).json({
                 success: false,
                 message: "Error listing sessions.",
+                error: error.message,
+            });
+        }
+    }
+
+    /**
+     * Resolve a WhatsApp LID (opaque identifier) to a phone number.
+     * Returns 200 even when unresolved — an unknown LID is a valid answer.
+     * @async
+     * @param {import('express').Request} req - Express request object. Requires sessionId and lid in params.
+     * @param {import('express').Response} res - Express response object.
+     * @returns {Promise<void>}
+     */
+    async resolveLid(req, res) {
+        const { sessionId, lid } = req.params;
+
+        const lidDigits = String(lid).replace(/\D+/g, "");
+        if (lidDigits.length < 10) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid LID. A numeric LID of at least 10 digits is required.",
+            });
+        }
+
+        if (!SessionManager.getSession(sessionId)) {
+            return res.status(404).json({
+                success: false,
+                message: "Session not found.",
+            });
+        }
+
+        try {
+            const { phoneNumber, source } = await resolvePN(sessionId, lidDigits);
+            res.status(200).json({
+                success: true,
+                sessionId,
+                lid: lidDigits,
+                phoneNumber: phoneNumber ?? null,
+                resolved: phoneNumber !== null,
+                source: source ?? null,
+            });
+        } catch (error) {
+            logger.error({ error }, "Error resolving LID");
+            res.status(500).json({
+                success: false,
+                message: "Error resolving LID.",
                 error: error.message,
             });
         }
