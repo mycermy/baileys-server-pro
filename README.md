@@ -26,7 +26,7 @@ nano .env
 ### Environment Variables:
 - **`PORT`** - Server port (default: 3000)
 - **`NODE_ENV`** - Environment mode (default: production)
-- **`API_KEY`** *(optional)* — When set, every API request must include the header `X-API-Key: <value>`. Acts as a **global (unrestricted) key** — it can reach all sessions and the key-management endpoints. The `GET /health` endpoint is always exempt (for Docker/healthcheck). When empty the server is unauthenticated (backward-compatible default).
+- **`API_KEY`** *(optional)* — When set, every request to a path under `/api/` must include the header `X-API-Key: <value>`. Acts as a **global (unrestricted) key** — it can reach all sessions and the key-management endpoints. Paths outside `/api/` — the dashboard (`/`, static assets), `/health`, and `/api-docs` — remain open without a key (network-layer controls restrict those). `/api/config` is also exempt because it is the Docker healthcheck target in `docker-compose.yml` and only returns the public base URL. The built-in dashboard prompts for the key once per browser session and stores it in `sessionStorage` (never written to disk). When `API_KEY` is empty the server is unauthenticated (backward-compatible default).
 - **`CORS_ORIGINS`** *(optional)* — Comma-separated list of allowed `Origin` header values, e.g. `https://app.example.com,https://admin.example.com`. Server-to-server requests (no `Origin` header, e.g. from Laravel/Guzzle) are always allowed. When empty, CORS is fully permissive.
 
 #### Per-session API-key registry (`sessions/keys.json`)
@@ -298,10 +298,10 @@ Client (Tailscale IP)  →  OpenLiteSpeed (port 443/80, TLS)
 
 | Variable | Required | Description |
 |---|---|---|
-| `API_KEY` | Recommended | Global (unrestricted) shared secret. Set the same value in OLS's request header and in the container env. Every API request must include `X-API-Key: <value>`. Scoped per-session keys can be added at runtime via `/api/keys` — no restart required. |
+| `API_KEY` | Recommended | Global (unrestricted) shared secret. Set the same value in OLS's request header and in the container env. Every request to `/api/…` must include `X-API-Key: <value>`. Paths outside `/api/` (dashboard, `/health`, `/api-docs`) remain open — access is restricted at the network layer. Scoped per-session keys can be added at runtime via `/api/keys` — no restart required. |
 | `CORS_ORIGINS` | Optional | Comma-separated list of browser origins allowed to call the API (e.g. your Laravel app origin). Server-to-server callers (no `Origin` header) are always allowed. |
 
-> **`GET /health` is always exempt** from API-Key auth — the Docker/Portainer healthcheck relies on it.
+> **Auth scope:** `API_KEY` (and registry keys) gate only paths under `/api/`. The dashboard (`/`), static assets, `/health`, and `/api-docs` are always reachable without a key — access to those is restricted at the network/Docker port-binding layer, not by HTTP auth. The Docker/Portainer healthcheck (`GET /health`) therefore continues to work with no key regardless.
 >
 > **`sessions/keys.json`** lives inside the `wasap_sessions` named volume and persists across container recreation. Include it in your volume backup/restore procedure alongside the session credential directories.
 

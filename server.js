@@ -80,8 +80,21 @@ if (!hasGlobalKey && !hasRegistryKey) {
 }
 
 app.use((req, res, next) => {
-    // Exempt paths — set scope to null so downstream never sees undefined
-    if (req.method === "OPTIONS" || req.path === "/health") {
+    // Exempt paths — set scope to null so downstream never sees undefined.
+    //
+    // /api/config is exempt alongside /health because it is the Docker
+    // healthcheck target in docker-compose.yml (the Portainer stack uses
+    // /health). It only returns the public base URL, so it exposes nothing.
+    if (req.method === "OPTIONS" || req.path === "/health" || req.path === "/api/config") {
+        req.apiKeyScope = null;
+        return next();
+    }
+
+    // This server also serves its own dashboard (public/index.html) and the
+    // Swagger UI. A browser cannot send a header for the top-level navigation
+    // that loads those pages, so gating them would make them permanently
+    // unreachable with a 401. Only the JSON API itself is authenticated.
+    if (!req.path.startsWith("/api/")) {
         req.apiKeyScope = null;
         return next();
     }

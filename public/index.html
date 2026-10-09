@@ -201,6 +201,35 @@ Server responses will appear here...</pre
             // Use current origin for API calls (works in all environments)
             const API_BASE_URL = window.location.origin;
 
+            // Optional API key. When the server has API_KEY set, the operator enters it
+            // once here; it is kept for the browser session only (never persisted to disk).
+            let API_KEY = sessionStorage.getItem("wasap_api_key") || "";
+
+            function promptForApiKey() {
+                const entered = window.prompt("This server requires an API key. Enter it to continue:");
+                if (entered) {
+                    API_KEY = entered.trim();
+                    sessionStorage.setItem("wasap_api_key", API_KEY);
+                }
+                return API_KEY;
+            }
+
+            async function apiFetch(url, options = {}) {
+                options.headers = Object.assign({}, options.headers || {});
+                if (API_KEY) options.headers["X-API-Key"] = API_KEY;
+
+                let response = await fetch(url, options);
+
+                // Ask once for the key, then retry the request that was rejected.
+                if (response.status === 401 && !options.__retried) {
+                    if (!promptForApiKey()) return response;
+                    options.__retried = true;
+                    options.headers["X-API-Key"] = API_KEY;
+                    response = await fetch(url, options);
+                }
+                return response;
+            }
+
             // Elementos del DOM
             const sessionIdInput = document.getElementById("session-id");
             const webhookUrlInput = document.getElementById("webhook-url");
@@ -247,7 +276,7 @@ Server responses will appear here...</pre
                 updateUI(true);
 
                 try {
-                    const response = await fetch(
+                    const response = await apiFetch(
                         `${API_BASE_URL}/api/sessions/start`,
                         {
                             method: "POST",
@@ -279,7 +308,7 @@ Server responses will appear here...</pre
                     "<p>Refreshing QR, please wait...</p>"; // Loading message
 
                 try {
-                    const response = await fetch(
+                    const response = await apiFetch(
                         `${API_BASE_URL}/api/sessions/${sessionId}/qr`,
                         { cache: "no-cache" }
                     );
@@ -311,7 +340,7 @@ Server responses will appear here...</pre
                         if (data.message) {
                             alert(data.message);
                         }
-                        const statusResponse = await fetch(
+                        const statusResponse = await apiFetch(
                             `${API_BASE_URL}/api/sessions/${sessionId}/status`
                         );
                         const statusData = await statusResponse.json();
@@ -340,7 +369,7 @@ Server responses will appear here...</pre
                 }
 
                 try {
-                    const response = await fetch(
+                    const response = await apiFetch(
                         `${API_BASE_URL}/api/sessions/${sessionId}/send-message`,
                         {
                             method: "POST",
@@ -375,7 +404,7 @@ Server responses will appear here...</pre
                     return;
 
                 try {
-                    const response = await fetch(
+                    const response = await apiFetch(
                         `${API_BASE_URL}/api/sessions/${sessionId}/end`,
                         {
                             method: "DELETE",

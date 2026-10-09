@@ -19,10 +19,12 @@ The server supports two kinds of API keys, checked in this order:
 1. **Scoped (per-session) key** — registered at runtime via `POST /api/keys`. Grants access to one specific session only. `GET /api/sessions` returns only that session; any `/:sessionId/…` route for a *different* session returns `403`.
 2. **Global key** (`API_KEY` env var) — unrestricted; can reach all sessions and the `/api/keys` management endpoints.
 
-Every request (except `GET /health` and OPTIONS) must include:
+Every request to a path under `/api/` (except OPTIONS) must include:
 ```
 X-API-Key: <your_api_key>
 ```
+
+Paths outside `/api/` — the built-in dashboard (`/`, static assets), `/health`, and `/api-docs` — do **not** require the key (they are restricted at the network layer instead). The dashboard prompts for the key once per browser session and stores it in `sessionStorage`.
 
 When `API_KEY` is empty **and** the registry has no keys the server is unauthenticated (backward-compatible).
 
