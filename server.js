@@ -18,6 +18,10 @@ const __dirname = path.dirname(__filename);
 
 const banner = bannerBaileysServerPro;
 
+// ── Environment ──────────────────────────────────────────────────────────────
+const API_KEY      = process.env.API_KEY      || "";
+const CORS_ORIGINS = process.env.CORS_ORIGINS || "";
+
 try {
     initializeDirectories();
     console.log("✅ Directories initialized");
@@ -32,8 +36,42 @@ try {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// ── CORS ─────────────────────────────────────────────────────────────────────
+if (CORS_ORIGINS) {
+    const allowedOrigins = CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean);
+    app.use(
+        cors({
+            origin(origin, callback) {
+                // Allow requests with no Origin header (server-to-server, e.g. Laravel/Guzzle)
+                if (!origin) return callback(null, true);
+                if (allowedOrigins.includes(origin)) return callback(null, true);
+                callback(new Error(`CORS: origin '${origin}' not allowed`));
+            },
+            credentials: true,
+        })
+    );
+} else {
+    console.warn("⚠️  CORS_ORIGINS not set — CORS is wide open (permissive).");
+    app.use(cors());
+}
+
 app.use(express.json());
+
+// ── API-Key authentication ────────────────────────────────────────────────────
+if (API_KEY) {
+    app.use((req, res, next) => {
+        // Always pass through OPTIONS preflight and the health-check endpoint
+        if (req.method === "OPTIONS" || req.path === "/health") return next();
+
+        const provided = req.headers["x-api-key"] || "";
+        if (provided !== API_KEY) {
+            return res.status(401).json({ success: false, message: "Unauthorized." });
+        }
+        next();
+    });
+} else {
+    console.warn("⚠️  API_KEY not set — the API is unauthenticated.");
+}
 
 // API routes must come BEFORE static middleware
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

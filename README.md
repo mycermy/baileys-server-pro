@@ -26,6 +26,8 @@ nano .env
 ### Environment Variables:
 - **`PORT`** - Server port (default: 3000)
 - **`NODE_ENV`** - Environment mode (default: production)
+- **`API_KEY`** *(optional)* — When set, every API request must include the header `X-API-Key: <value>`. The `GET /health` endpoint is always exempt (for Docker/healthcheck). When empty the server is unauthenticated (backward-compatible default).
+- **`CORS_ORIGINS`** *(optional)* — Comma-separated list of allowed `Origin` header values, e.g. `https://app.example.com,https://admin.example.com`. Server-to-server requests (no `Origin` header, e.g. from Laravel/Guzzle) are always allowed. When empty, CORS is fully permissive.
 
 ### Docker Environment Loading:
 
@@ -257,3 +259,43 @@ The server saves credentials in the `/usr/src/app/sessions` folder inside the co
    docker exec baileys-server-pro ls -la /usr/src/app/sessions/ZRInvois/
    ```
 3. If `creds.json` is missing, the container is using an empty volume. Restore it from a backup or re-scan the QR code.
+
+---
+
+## 🔒 Reverse-Proxy + Tailscale-Only Access (OpenLiteSpeed)
+
+The recommended production setup routes all external traffic through **OpenLiteSpeed** as a reverse proxy, with the container bound to `127.0.0.1:3000:3000` so it is never reachable directly from the internet. Access to OpenLiteSpeed itself is then restricted to your **Tailscale** network (e.g. by firewall rules or an OLS `Allow List` that whitelists only `100.64.0.0/10`).
+
+### Layer overview
+
+```
+Client (Tailscale IP)  →  OpenLiteSpeed (port 443/80, TLS)
+                        →  127.0.0.1:3000  (baileys-server-pro container)
+```
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `API_KEY` | Recommended | Shared secret. Set the same value in OLS's request header and in the container env. Every API request must include `X-API-Key: <value>`. |
+| `CORS_ORIGINS` | Optional | Comma-separated list of browser origins allowed to call the API (e.g. your Laravel app origin). Server-to-server callers (no `Origin` header) are always allowed. |
+
+> **`GET /health` is always exempt** from API-Key auth — the Docker/Portainer healthcheck relies on it.
+
+### Minimal `.env` for a Tailscale-restricted VPS
+
+```bash
+API_KEY=replace_with_a_long_random_secret
+CORS_ORIGINS=https://your-laravel-app.example.com
+```
+
+### OpenLiteSpeed vhost snippet
+
+In your OLS virtual host → **Context** or **Rewrite rules**, forward to the container and inject the key so your internal services don't need it:
+
+```
+# Example using OLS Context → Proxy
+# URI: /
+# Address: 127.0.0.1:3000
+# Request Header: X-API-Key replace_with_a_long_random_secret
+```

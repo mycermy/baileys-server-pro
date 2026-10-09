@@ -14,7 +14,13 @@ http://localhost:3000/api
 
 ## Authentication
 
-No authentication required for basic usage. Sessions are managed by session IDs.
+When `API_KEY` is set on the server, every request must include the header:
+
+```
+X-API-Key: <your_api_key>
+```
+
+The `GET /health` endpoint is always exempt. When `API_KEY` is empty the server is unauthenticated (backward-compatible).
 
 ## API Endpoints
 
@@ -26,7 +32,8 @@ No authentication required for basic usage. Sessions are managed by session IDs.
 
 **cURL Example:**
 ```bash
-curl -X GET http://localhost:3000/api/sessions
+curl -X GET http://localhost:3000/api/sessions \
+  -H "X-API-Key: your_api_key"
 ```
 
 **Response (Success):**
@@ -39,7 +46,10 @@ curl -X GET http://localhost:3000/api/sessions
       "status": "open",
       "createdAt": "2026-07-24T12:00:00.000Z",
       "hasWebhook": false,
-      "inMemory": true
+      "inMemory": true,
+      "phoneNumber": "60107750600",
+      "pushName": "zrworkshop",
+      "platform": "android"
     }
   ],
   "total": 1
@@ -50,6 +60,11 @@ curl -X GET http://localhost:3000/api/sessions
 - `status` is `"open"`, `"connecting"`, `"starting"`, `"stopped"`, etc.
 - `inMemory: true` means the session is currently loaded in the server.
 - `inMemory: false` means the session folder exists but is not active (e.g., after a restart).
+- `phoneNumber` — digits-only phone number derived from the Baileys JID (e.g. `"60107750600"`), or `null` if not yet connected.
+- `pushName` — WhatsApp display name of the connected account, or `null`.
+- `platform` — Baileys platform string (e.g. `"android"`, `"smba"`), or `null`.
+- For **in-memory** sessions, identity fields come from the live socket (`sock.user`).
+- For **on-disk / stopped** sessions, identity fields are read from `creds.json` in the session folder.
 
 ---
 
@@ -71,6 +86,7 @@ curl -X GET http://localhost:3000/api/sessions
 ```bash
 curl -X POST http://localhost:3000/api/sessions/start \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: your_api_key" \
   -d '{
     "sessionId": "my-session-1",
     "webhook": "https://webhook.site/123456"
@@ -107,7 +123,8 @@ curl -X POST http://localhost:3000/api/sessions/start \
 
 **cURL Example:**
 ```bash
-curl -X GET http://localhost:3000/api/sessions/my-session-1/status
+curl -X GET http://localhost:3000/api/sessions/my-session-1/status \
+  -H "X-API-Key: your_api_key"
 ```
 
 **Response (Connecting - needs QR scan):**

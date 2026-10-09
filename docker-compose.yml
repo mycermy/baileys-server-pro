@@ -19,6 +19,8 @@ services:
       - RATE_LIMIT_PER_HOUR=${RATE_LIMIT_PER_HOUR:-100}
       - RATE_LIMIT_PER_DAY=${RATE_LIMIT_PER_DAY:-1000}
       - RATE_LIMIT_DELAY_MS=${RATE_LIMIT_DELAY_MS:-2000}
+      - API_KEY=${API_KEY:-}
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
     volumes:
       - ./sessions:/usr/src/app/sessions
       - ./uploads:/usr/src/app/uploads

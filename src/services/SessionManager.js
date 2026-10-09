@@ -130,8 +130,37 @@ class SessionManager {
     }
 
     /**
+     * Extract a phone number (digits only) from a Baileys JID string.
+     * Returns null for group JIDs, missing/invalid input, or any error.
+     * @param {string|null|undefined} jid  e.g. "60107750600:21@s.whatsapp.net"
+     * @returns {string|null}
+     */
+    static _phoneFromJid(jid) {
+        try {
+            if (!jid || typeof jid !== "string") return null;
+            if (jid.includes("@g.us")) return null; // group JID — never a phone
+            // Take the segment before the first colon, at-sign, or dot
+            const raw = jid.split(/[:@.]/)[0];
+            const digits = raw.replace(/\D/g, "");
+            return digits || null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
      * List all sessions — both active in-memory and on-disk.
-     * @returns {Array<{sessionId: string, status: string, createdAt: string|null, hasWebhook: boolean, inMemory: boolean}>}
+     *
+     * @returns {Array<{
+     *   sessionId:   string,
+     *   status:      string,
+     *   createdAt:   string|null,
+     *   hasWebhook:  boolean,
+     *   inMemory:    boolean,
+     *   phoneNumber: string|null,
+     *   pushName:    string|null,
+     *   platform:    string|null
+     * }>}
      */
     listSessions() {
         const seen = new Set();
@@ -140,12 +169,21 @@ class SessionManager {
         // 1. Active in-memory sessions
         for (const [sessionId, session] of this.sessions) {
             seen.add(sessionId);
+
+            const user = session.sock?.user ?? null;
+            const phoneNumber = SessionManager._phoneFromJid(user?.id ?? null);
+            const pushName    = user?.name    ?? null;
+            const platform    = user?.platform ?? null;
+
             result.push({
                 sessionId,
                 status: session.status || "unknown",
                 createdAt: null, // metadata not stored on instance
                 hasWebhook: !!session.webhookUrl,
                 inMemory: true,
+                phoneNumber,
+                pushName,
+                platform,
             });
         }
 
@@ -175,12 +213,32 @@ class SessionManager {
                     }
                 }
 
+                // Attempt to read identity from creds.json (best-effort)
+                let phoneNumber = null;
+                let pushName    = null;
+                let platform    = null;
+
+                try {
+                    const credsPath = path.join(folderPath, "creds.json");
+                    if (fs.existsSync(credsPath)) {
+                        const creds = JSON.parse(fs.readFileSync(credsPath, "utf-8"));
+                        phoneNumber = SessionManager._phoneFromJid(creds?.me?.id ?? null);
+                        pushName    = creds?.me?.name     ?? null;
+                        platform    = creds?.platform     ?? null;
+                    }
+                } catch {
+                    // ignore malformed or unreadable creds.json
+                }
+
                 result.push({
                     sessionId: folder,
                     status: "stopped",
                     createdAt,
                     hasWebhook,
                     inMemory: false,
+                    phoneNumber,
+                    pushName,
+                    platform,
                 });
             }
         }
