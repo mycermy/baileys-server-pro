@@ -24,6 +24,15 @@ class SessionController {
             });
         }
 
+        // A scoped key may only start/re-start its own session
+        const scope = req.apiKeyScope;
+        if (scope && req.body.sessionId !== scope) {
+            return res.status(403).json({
+                success: false,
+                message: "Forbidden: this API key is not scoped to that session.",
+            });
+        }
+
         try {
             await SessionManager.startSession(sessionId, webhook);
             res.status(200).json({
@@ -447,6 +456,7 @@ class SessionController {
 
     /**
      * List all sessions (active in-memory + on-disk).
+     * If req.apiKeyScope is a non-empty string (scoped key) only that session is returned.
      * @async
      * @param {import('express').Request} req - Express request object.
      * @param {import('express').Response} res - Express response object.
@@ -454,7 +464,14 @@ class SessionController {
      */
     async listSessions(req, res) {
         try {
-            const sessions = SessionManager.listSessions();
+            let sessions = SessionManager.listSessions();
+
+            // Scoped key: filter to the single session the key belongs to
+            const scope = req.apiKeyScope;
+            if (scope) {
+                sessions = sessions.filter((s) => s.sessionId === scope);
+            }
+
             res.status(200).json({
                 success: true,
                 sessions,

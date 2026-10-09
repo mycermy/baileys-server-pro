@@ -14,13 +14,115 @@ http://localhost:3000/api
 
 ## Authentication
 
-When `API_KEY` is set on the server, every request must include the header:
+The server supports two kinds of API keys, checked in this order:
 
+1. **Scoped (per-session) key** — registered at runtime via `POST /api/keys`. Grants access to one specific session only. `GET /api/sessions` returns only that session; any `/:sessionId/…` route for a *different* session returns `403`.
+2. **Global key** (`API_KEY` env var) — unrestricted; can reach all sessions and the `/api/keys` management endpoints.
+
+Every request (except `GET /health` and OPTIONS) must include:
 ```
 X-API-Key: <your_api_key>
 ```
 
-The `GET /health` endpoint is always exempt. When `API_KEY` is empty the server is unauthenticated (backward-compatible).
+When `API_KEY` is empty **and** the registry has no keys the server is unauthenticated (backward-compatible).
+
+## Key Management Endpoints (`/api/keys`)
+
+> **Global key required.** A scoped key receives `403` on these routes.
+
+### List registered keys
+
+```bash
+curl -s http://localhost:3000/api/keys \
+  -H "X-API-Key: $GLOBAL_KEY"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "keys": [
+    {
+      "sessionId": "store-1",
+      "maskedKey": "abc123…xyz9",
+      "createdAt": "2026-10-09T12:00:00.000Z",
+      "updatedAt": "2026-10-09T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+> Full keys are **never** returned. The mask format is: first 6 chars + `…` + last 4 chars.
+
+### Register or rotate a session key
+
+```bash
+curl -s -X POST http://localhost:3000/api/keys \
+  -H "X-API-Key: $GLOBAL_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"sessionId":"store-1","key":"my-secret-device-key"}'
+```
+
+**Response `200`:**
+```json
+{ "success": true }
+```
+
+**Response `400`** (missing fields):
+```json
+{ "success": false, "message": "Both sessionId and key fields are required." }
+```
+
+**Response `403`** (called with a scoped key):
+```json
+{ "success": false, "message": "Forbidden: key-management routes require the global API key." }
+```
+
+### Remove a session key
+
+```bash
+curl -s -X DELETE http://localhost:3000/api/keys/store-1 \
+  -H "X-API-Key: $GLOBAL_KEY"
+```
+
+**Response `200`:**
+```json
+{ "success": true }
+```
+
+**Response `404`** (session not registered):
+```json
+{ "success": false, "message": "No key registered for session 'store-1'." }
+```
+
+### Scoped key behaviour
+
+Once `store-1` has a key registered:
+
+```bash
+SCOPED_KEY="my-secret-device-key"
+
+# ✅ Allowed — own session
+curl -s http://localhost:3000/api/sessions \
+  -H "X-API-Key: $SCOPED_KEY"
+# Returns only the store-1 entry
+
+# ✅ Allowed — own session action
+curl -s -X POST http://localhost:3000/api/sessions/store-1/send-message \
+  -H "X-API-Key: $SCOPED_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"number":"60101234567","message":"Hello"}'
+
+# ❌ Forbidden — different session
+curl -s http://localhost:3000/api/sessions/store-2/status \
+  -H "X-API-Key: $SCOPED_KEY"
+# → 403 {"success":false,"message":"Forbidden: this API key is not scoped to that session."}
+
+# ❌ Forbidden — key-management route
+curl -s http://localhost:3000/api/keys \
+  -H "X-API-Key: $SCOPED_KEY"
+# → 403 {"success":false,"message":"Forbidden: key-management routes require the global API key."}
+```
 
 ## API Endpoints
 

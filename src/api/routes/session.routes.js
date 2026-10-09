@@ -1,6 +1,7 @@
 import multer from "multer";
 import { Router } from "express";
 import SessionController from "../controllers/session.controller.js";
+import { requireScope } from "../middleware/scope.js";
 
 const upload = multer({ dest: "uploads/" });
 const router = Router();
@@ -97,7 +98,7 @@ router.post("/start", SessionController.start);
  *       '404':
  *         description: Session not found.
  */
-router.get("/:sessionId/qr", SessionController.getQrCode);
+router.get("/:sessionId/qr", requireScope, SessionController.getQrCode);
 
 /**
  * @swagger
@@ -131,7 +132,7 @@ router.get("/:sessionId/qr", SessionController.getQrCode);
  *       '404':
  *         description: Sesión no encontrada.
  */
-router.get("/:sessionId/status", SessionController.getStatus);
+router.get("/:sessionId/status", requireScope, SessionController.getStatus);
 
 /**
  * @swagger
@@ -170,7 +171,7 @@ router.get("/:sessionId/status", SessionController.getStatus);
  *       '503':
  *         description: The session is not open or ready to send messages.
  */
-router.post("/:sessionId/send-message", SessionController.sendMessage);
+router.post("/:sessionId/send-message", requireScope, SessionController.sendMessage);
 
 /**
  * @swagger
@@ -210,7 +211,7 @@ router.post("/:sessionId/send-message", SessionController.sendMessage);
  *       '503':
  *         description: The session is not open.
  */
-router.post("/:sessionId/update-status", upload.single("media"), SessionController.updateStatus);
+router.post("/:sessionId/update-status", requireScope, upload.single("media"), SessionController.updateStatus);
 
 /**
  * @swagger
@@ -255,6 +256,7 @@ router.post("/:sessionId/update-status", upload.single("media"), SessionControll
  */
 router.post(
     "/:sessionId/send-image",
+    requireScope,
     upload.single("image"),
     SessionController.sendImage
 );
@@ -302,6 +304,7 @@ router.post(
  */
 router.post(
     "/:sessionId/send-document",
+    requireScope,
     upload.single("document"),
     SessionController.sendDocument
 );
@@ -325,7 +328,7 @@ router.post(
  *       '404':
  *         description: Session not found.
  */
-router.delete("/:sessionId/end", SessionController.end);
+router.delete("/:sessionId/end", requireScope, SessionController.end);
 
 /**
  * @swagger
@@ -382,7 +385,7 @@ router.delete("/:sessionId/end", SessionController.end);
  *       '404':
  *         description: Session not found.
  */
-router.get("/:sessionId/rate-limit-status", SessionController.getRateLimitStatus);
+router.get("/:sessionId/rate-limit-status", requireScope, SessionController.getRateLimitStatus);
 
 /**
  * @swagger
@@ -444,6 +447,6 @@ router.get("/:sessionId/rate-limit-status", SessionController.getRateLimitStatus
  *       '404':
  *         description: Session not found.
  */
-router.get("/:sessionId/resolve-lid/:lid", SessionController.resolveLid);
+router.get("/:sessionId/resolve-lid/:lid", requireScope, SessionController.resolveLid);
 
 export default router;

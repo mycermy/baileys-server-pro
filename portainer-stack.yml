@@ -25,6 +25,12 @@ services:
     # IMPORTANT — see README.md "Deployment files" section.
     # This stack uses named volumes intentionally for production (VPS).
     # Do NOT change to bind mounts here without also updating the VPS backup/restore strategy.
+    #
+    # sessions/keys.json — the per-session API-key registry — lives inside the
+    # wasap_sessions volume (alongside the session credential directories).
+    # It is written atomically by the server at runtime; no compose change is
+    # needed when adding, rotating, or removing a device key.
+    # BACKUP NOTE: include keys.json when backing up / restoring wasap_sessions.
     volumes:
       - wasap_sessions:/usr/src/app/sessions
       - wasap_uploads:/usr/src/app/uploads

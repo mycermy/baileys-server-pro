@@ -26,8 +26,29 @@ nano .env
 ### Environment Variables:
 - **`PORT`** - Server port (default: 3000)
 - **`NODE_ENV`** - Environment mode (default: production)
-- **`API_KEY`** *(optional)* — When set, every API request must include the header `X-API-Key: <value>`. The `GET /health` endpoint is always exempt (for Docker/healthcheck). When empty the server is unauthenticated (backward-compatible default).
+- **`API_KEY`** *(optional)* — When set, every API request must include the header `X-API-Key: <value>`. Acts as a **global (unrestricted) key** — it can reach all sessions and the key-management endpoints. The `GET /health` endpoint is always exempt (for Docker/healthcheck). When empty the server is unauthenticated (backward-compatible default).
 - **`CORS_ORIGINS`** *(optional)* — Comma-separated list of allowed `Origin` header values, e.g. `https://app.example.com,https://admin.example.com`. Server-to-server requests (no `Origin` header, e.g. from Laravel/Guzzle) are always allowed. When empty, CORS is fully permissive.
+
+#### Per-session API-key registry (`sessions/keys.json`)
+
+In addition to the global `API_KEY`, each WhatsApp session can have its **own scoped API key** registered at runtime — no container restart needed. Keys are persisted to `sessions/keys.json` inside the named Docker volume so they survive container recreation.
+
+**Key-resolution order** for every incoming `X-API-Key` header:
+1. If it matches a key in the registry → request is **scoped** to that session only (`GET /api/sessions` returns only that session; all `/:sessionId/…` routes return 403 for any other session).
+2. Else if it matches the env `API_KEY` (non-empty) → request is **global** (unrestricted, all sessions, all endpoints).
+3. Else → `401 Unauthorized`.
+
+When **both** the registry is empty **and** `API_KEY` is unset the server is fully unauthenticated (original behaviour).
+
+**Managing session keys at runtime** (requires global `API_KEY`):
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/keys` | List all registered keys (masked — first 6 + `…` + last 4). Full keys are **never** returned. |
+| `POST` | `/api/keys` | Register or rotate a key. Body: `{"sessionId":"store-1","key":"<secret>"}` |
+| `DELETE` | `/api/keys/:sessionId` | Remove the key for a session. |
+
+> Scoped (device) keys **cannot** call `/api/keys` — those endpoints require the global key or auth-disabled mode.
 
 ### Docker Environment Loading:
 
@@ -277,10 +298,12 @@ Client (Tailscale IP)  →  OpenLiteSpeed (port 443/80, TLS)
 
 | Variable | Required | Description |
 |---|---|---|
-| `API_KEY` | Recommended | Shared secret. Set the same value in OLS's request header and in the container env. Every API request must include `X-API-Key: <value>`. |
+| `API_KEY` | Recommended | Global (unrestricted) shared secret. Set the same value in OLS's request header and in the container env. Every API request must include `X-API-Key: <value>`. Scoped per-session keys can be added at runtime via `/api/keys` — no restart required. |
 | `CORS_ORIGINS` | Optional | Comma-separated list of browser origins allowed to call the API (e.g. your Laravel app origin). Server-to-server callers (no `Origin` header) are always allowed. |
 
 > **`GET /health` is always exempt** from API-Key auth — the Docker/Portainer healthcheck relies on it.
+>
+> **`sessions/keys.json`** lives inside the `wasap_sessions` named volume and persists across container recreation. Include it in your volume backup/restore procedure alongside the session credential directories.
 
 ### Minimal `.env` for a Tailscale-restricted VPS
 
