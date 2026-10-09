@@ -70,13 +70,14 @@ app.use(express.json());
 // When BOTH the registry is empty AND API_KEY is unset, auth is fully
 // disabled (backward-compatible) and req.apiKeyScope = null for all requests.
 const hasGlobalKey   = Boolean(API_KEY);
-const hasRegistryKey = KeyRegistry.size > 0;
 
-if (!hasGlobalKey && !hasRegistryKey) {
-    console.warn("⚠️  API_KEY not set and no keys in registry — the API is unauthenticated.");
+if (!hasGlobalKey && KeyRegistry.size === 0) {
+    // Not permanent: the key check is re-evaluated per request, so the first
+    // key issued through POST /api/keys turns authentication on immediately.
+    console.warn("⚠️  API_KEY not set and no keys in registry — the API is unauthenticated until a key is issued.");
 } else {
-    if (hasGlobalKey)   console.log("🔑 Global API_KEY is active.");
-    if (hasRegistryKey) console.log(`🔑 KeyRegistry: ${KeyRegistry.size} session key(s) active.`);
+    if (hasGlobalKey) console.log("🔑 Global API_KEY is active.");
+    if (KeyRegistry.size > 0) console.log(`🔑 KeyRegistry: ${KeyRegistry.size} session key(s) active.`);
 }
 
 app.use((req, res, next) => {
@@ -99,8 +100,15 @@ app.use((req, res, next) => {
         return next();
     }
 
-    // No auth configured → open access
-    if (!hasGlobalKey && !hasRegistryKey) {
+    // No auth configured → open access.
+    //
+    // Evaluated PER REQUEST, not from a startup constant. The registry is
+    // populated at runtime by POST /api/keys, so a server that booted with an
+    // empty registry and no API_KEY would otherwise keep anting as
+    // "unauthenticated" forever: every later request would skip the key check
+    // and per-session scoping would never take effect. Reading the live size
+    // makes "issue the first key" turn auth on immediately, with no restart.
+    if (!hasGlobalKey && KeyRegistry.size === 0) {
         req.apiKeyScope = null;
         return next();
     }
